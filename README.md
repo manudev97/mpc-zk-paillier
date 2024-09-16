@@ -6,8 +6,14 @@ La computación multipartita segura (SMPC/MPC) permite que varios participantes 
 
 Imagina que un grupo de 3 investigadores está trabajando en un proyecto conjunto y cada uno ha desarrollado un algoritmo innovador con resultados distintos. Los investigadores quieren colaborar para descubrir cuál de los algoritmos es el más eficiente, es decir, cuál tiene el menor tiempo de ejecución. Sin embargo, cada investigador considera que los detalles de su propio trabajo son confidenciales y no quiere revelar sus resultados exactos a los demás. Para solucionar esto, necesitan determinar cuál es el algoritmo más rápido sin exponer los tiempos de ejecución de cada uno.
 
+<div style="text-align: center;">
+    <img src="assets/researchers.jpeg" alt="researchers" width="400" height="250"/>
+</div>
+
 El problema puede ser representado por la función:
+
 $$F(t_1, t_2, t_3) = min(t_1, t_2, t_3)$$
+
 ​donde $t_1, t_2, t_3$ son los tiempos de ejecución de cada uno de los algoritmos de los investigadores.
 
 Una solución sencilla sería que todos revelaran sus tiempos de ejecución a un tercero que pudiera calcular el valor mínimo. Sin embargo, como no confían en ninguna entidad externa para manejar estos datos confidenciales, necesitan una forma de encontrar el resultado sin revelar sus tiempos a nadie más.
