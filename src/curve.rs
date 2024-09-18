@@ -135,57 +135,113 @@ pub mod ecc {
 
         pub fn cayley_table(&self, points: &Vec<Point>) {
             let num_points = points.len();
-        
-            // Calcula el ancho máximo para cada coordenada (x, y)
-            let max_width = points.iter()
-                .flat_map(|p| [p.x.to_string(), p.y.to_string()])
-                .map(|s| s.len())
+            let ascii_title = r#"
+ $$$$$$\   $$$$$$\ $$\     $$\ $$\       $$$$$$$$\ $$\     $$\ $$\  $$$$$$\        $$$$$$$$\  $$$$$$\  $$$$$$$\  $$\       $$$$$$$$\ 
+$$  __$$\ $$  __$$\\$$\   $$  |$$ |      $$  _____|\$$\   $$  |$  |$$  __$$\       \__$$  __|$$  __$$\ $$  __$$\ $$ |      $$  _____|
+$$ /  \__|$$ /  $$ |\$$\ $$  / $$ |      $$ |       \$$\ $$  / \_/ $$ /  \__|         $$ |   $$ /  $$ |$$ |  $$ |$$ |      $$ |      
+$$ |      $$$$$$$$ | \$$$$  /  $$ |      $$$$$\      \$$$$  /      \$$$$$$\           $$ |   $$$$$$$$ |$$$$$$$\ |$$ |      $$$$$\    
+$$ |      $$  __$$ |  \$$  /   $$ |      $$  __|      \$$  /        \____$$\          $$ |   $$  __$$ |$$  __$$\ $$ |      $$  __|   
+$$ |  $$\ $$ |  $$ |   $$ |    $$ |      $$ |          $$ |        $$\   $$ |         $$ |   $$ |  $$ |$$ |  $$ |$$ |      $$ |      
+\$$$$$$  |$$ |  $$ |   $$ |    $$$$$$$$\ $$$$$$$$\     $$ |        \$$$$$$  |         $$ |   $$ |  $$ |$$$$$$$  |$$$$$$$$\ $$$$$$$$\ 
+ \______/ \__|  \__|   \__|    \________|\________|    \__|         \______/          \__|   \__|  \__|\_______/ \________|\________|
+    "#;
+            println!("{}", ascii_title);
+
+            // calculate the size of the cells (max_x_len and max_y_len)
+            let max_x_len = points
+                .iter()
+                .map(|p| p.x.to_string().len())
                 .max()
-                .unwrap_or(0) + 2;
-        
-            // Imprime la primera fila (símbolo de infinito)
-            println!("+{:-<width$}", "", width = (num_points + 1) * (max_width + 3) - 1);
-        
-            // Imprime la segunda fila (símbolo de suma y puntos)
-            print!("| ∞");
-            for point in points {
-                print!("| {:width$} ", format!("({},{})", point.x, point.y), width = max_width);
-            }
-            println!("|");
-        
-            // Imprime las filas de la tabla
-            for i in 0..num_points {
-                print!("| {:width$} ", format!("({},{})", points[i].x, points[i].y), width = max_width);
-                for j in 0..num_points {
-                    let result = self.point_add(&points[i], &points[j]);
-                    print!("| {:width$} ", format!("({},{})", result.x, result.y), width = max_width);
-                }
-                println!("|");
-            }
-        
-            // Imprime la fila inferior
-            println!("+{:-<width$}", "", width = (num_points + 1) * (max_width + 3) - 1);
-        }
+                .unwrap_or(0);
+            let max_y_len = points
+                .iter()
+                .map(|p| p.y.to_string().len())
+                .max()
+                .unwrap_or(0);
 
-        /* pub fn print_cayley_table(&self, table: &[Vec<Point>]) {
-            let num_points = table.len();
-            let header_width = 10; // Adjust as needed
-
-            // Print header row
-            print!("{: <width$}", "+", width = header_width);
-            for point in table[0].iter() {
-                print!("{: <width$}", point, width = header_width);
-            }
-            println!();
-
-            // Print remaining rows
-            for i in 0..num_points {
-                print!("{: <width$}", table[i][0], width = header_width);
-                for j in 1..num_points {
-                    print!("{: <width$}", table[i][j], width = header_width);
+            // function to print a top or bottom line of the table
+            fn print_table_border(num_points: usize, cell_width: usize) {
+                print!("+");
+                for _ in 0..=num_points + 1 {
+                    print!("{:-<width$}+", "", width = cell_width);
                 }
                 println!();
             }
-        } */
+
+            let cell_width = max_x_len + max_y_len + 5; // adjustment for cell space
+
+            // print the top line of the table
+            print_table_border(num_points, cell_width);
+
+            // print the second row (plus symbol, infinity and dots)
+            print!("|    +    |    ∞    ");
+            for point in points {
+                // format x and y coordinate with maximum size found
+                print!(
+                    "| ({:>width_x$},{:>width_y$}) ",
+                    point.x,
+                    point.y,
+                    width_x = max_x_len,
+                    width_y = max_y_len
+                );
+            }
+            println!("|");
+
+            print_table_border(num_points, cell_width);
+
+            // print the third row (plus symbol and dots)
+            print!("|    ∞    |    ∞    ");
+            for point in points {
+                // format x and y coordinate with maximum size found
+                print!(
+                    "| ({:>width_x$},{:>width_y$}) ",
+                    point.x,
+                    point.y,
+                    width_x = max_x_len,
+                    width_y = max_y_len
+                );
+            }
+            println!("|");
+
+            print_table_border(num_points, cell_width);
+
+            // print the remaining rows of the table
+            for point in points {
+                // format x and y coordinate with maximum size found
+                for _ in 0..2 {
+                    print!(
+                        "| ({:>width_x$},{:>width_y$}) ",
+                        point.x,
+                        point.y,
+                        width_x = max_x_len,
+                        width_y = max_y_len
+                    );
+                }
+                for j in 0..num_points {
+                    let result = self.point_add(&point, &points[j]);
+
+                    // if the result is the point (0, 0), we print the infinity symbol
+                    if result.x == 0 && result.y == 0 {
+                        print!(
+                            "| {:^width$} ",
+                            "∞",
+                            width = max_x_len + max_y_len + 3 // total space to align with the rest
+                        );
+                    } else {
+                        // normally prints x and y coordinates
+                        print!(
+                            "| ({:>width_x$},{:>width_y$}) ",
+                            result.x,
+                            result.y,
+                            width_x = max_x_len,
+                            width_y = max_y_len
+                        );
+                    }
+                }
+                println!("|");
+
+                print_table_border(num_points, cell_width);
+            }
+        }
     }
 }

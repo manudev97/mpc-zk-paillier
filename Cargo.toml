@@ -6,7 +6,7 @@ description = "Integrative project on cryptographic primitives for #mpc #zk and 
 license = "GPL-3.0-or-later"
 repository = "https://github.com/manudev97/mpc-zk-paillier"
 categories = ["cryptography", "algorithms"]
-keywords = ["zk", "mpc", "paillier", "homomorphic", "encryption", "zero-knowledge", "cryptographic"]
+keywords = ["zk", "mpc", "tss", "paillier", "homomorphic", "encryption", "zero-knowledge", "cryptographic"]
 
 authors = [
     "Enmanuel Cabrera <manudevcabrera@gmail.com>"
