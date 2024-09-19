@@ -13,7 +13,11 @@ fn main() {
     let point_b = group_add[2];
     let sum_point = EcWei::point_add(&new_ec, &point_a, &point_b);
 
-    println!("\nThe sum of the {point_a:?} with the {point_b:?} is: {sum_point:?} ", );
+    println!("\nThe sum of the point {} with the point {} is: {} ", 
+        Point::to_string(&point_a),
+        Point::to_string(&point_b),
+        Point::to_string(&sum_point),
+     );
 
 
 }

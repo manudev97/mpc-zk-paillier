@@ -14,6 +14,15 @@ pub mod ecc {
         pub fn new(new_x: i64, new_y: i64) -> Self {
             Self { x: new_x, y: new_y }
         }
+        
+        pub fn to_string(&self) -> String {
+            format!("({},{})",self.x, self.y)
+        }
+    }
+
+    pub struct KeyPair {
+        pub sk: i64,
+        pub pk: Point,
     }
 
     // definition of an EcWei structure to represent the elliptic curve
@@ -98,7 +107,7 @@ pub mod ecc {
         }*/
 
         // generate a key pair: private and public
-        pub fn gen_key_pair(&self, ord: i64) -> Result<(i64, Point), String> {
+        pub fn gen_key_pair(&self, ord: i64) -> Result<KeyPair, String> {
             if ord <= 1 {
                 return Err("the value of n must be greater than 1.".to_string());
             }
@@ -110,7 +119,10 @@ pub mod ecc {
             // generate public key using scalar multiplication (private key: random integer)
             let public_key = self.scalar_mul(self.get_base_point(), &mut private_key.clone());
 
-            Ok((private_key, public_key))
+            Ok(KeyPair{
+                sk: private_key,
+                pk: public_key,
+            })
         }
 
         // function that returns a base point G of the curve (group generator)
