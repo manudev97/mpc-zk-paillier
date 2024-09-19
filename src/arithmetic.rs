@@ -28,4 +28,32 @@ pub mod basic_op {
                 None => None,
             }
         }
+
+        pub fn totient(n: &usize) -> usize {
+            let mut result = *n;
+            let mut n1 = *n;
+            let mut p = 2;
+        
+            // Probar todos los factores primos de n
+            while p * p <= *n {
+                // Si p es un factor primo de n
+                if n1 % p == 0 {
+                    // Eliminar todos los factores p de n
+                    while n1 % p == 0 {
+                        n1 /= p;
+                    }
+                    // Aplicar la fórmula de Euler: φ(n) = n * (1 - 1/p)
+                    result -= result / p;
+                }
+                p += 1;
+            }
+        
+            // Si n es un número primo mayor que √n
+            if n1 > 1 {
+                result -= result / n1;
+            }
+        
+            result
+        }
+
     }

@@ -1,4 +1,5 @@
 pub mod ecc {
+
     use crate::arithmetic::basic_op;
     extern crate rand;
     use rand::Rng;
@@ -21,7 +22,7 @@ pub mod ecc {
     }
 
     pub struct KeyPair {
-        pub sk: i64,
+        pub sk: usize,
         pub pk: Point,
     }
 
@@ -84,7 +85,7 @@ pub mod ecc {
             }
         }
 
-        pub fn scalar_mul(&self, point: Point, n: &mut i64) -> Point {
+        pub fn scalar_mul(&self, point: Point, n: &mut usize) -> Point {
             let mut point_q = point;
             let mut point_r = Point::new(0, 0);
             while *n > 0 {
@@ -107,7 +108,8 @@ pub mod ecc {
         }*/
 
         // generate a key pair: private and public
-        pub fn gen_key_pair(&self, ord: i64) -> Result<KeyPair, String> {
+        pub fn gen_key_pair(&self, group_points: Vec<Point>) -> Result<KeyPair, String> {
+            let ord = group_points.len();
             if ord <= 1 {
                 return Err("the value of n must be greater than 1.".to_string());
             }
@@ -117,7 +119,7 @@ pub mod ecc {
             let private_key = rng.gen_range(1..ord);
 
             // generate public key using scalar multiplication (private key: random integer)
-            let public_key = self.scalar_mul(self.get_base_point(), &mut private_key.clone());
+            let public_key = self.scalar_mul(*self.get_base_points(&group_points).get(0).unwrap(), &mut private_key.clone());
 
             Ok(KeyPair{
                 sk: private_key,
@@ -126,9 +128,30 @@ pub mod ecc {
         }
 
         // function that returns a base point G of the curve (group generator)
-        fn get_base_point(&self) -> Point {
-            // conclude
-            Point::new(10, 16)
+        pub fn get_base_points<'a>(&self, group_points: &'a Vec<Point>) -> Vec<Point> {
+            let mut n: usize = group_points.len()+1;
+            let totient_n = basic_op::totient(&mut n);
+            let mut generator_points = Vec::new();
+        
+            // we go through each point in the group
+            for point in group_points {
+                // we go through the divisors of n
+                for k in 1..=totient_n {
+                    if n % k as usize == 0 {
+                        // we multiply the point by the divisor k
+                        let mut k_usize = k as usize;
+                        let result = self.scalar_mul(*point, &mut k_usize);
+        
+                        // if the result is the point at infinity (0,0), the point is a generator
+                        if result.x == 0 && result.y == 0 {
+                            generator_points.push(*point);
+                            break;
+                        }
+                    }
+                }
+            }
+        
+            generator_points
         }
 
         pub fn group_points(&self) -> Vec<Point> {
