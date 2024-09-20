@@ -129,25 +129,29 @@ pub mod ecc {
 
         // function that returns a base point G of the curve (group generator)
         pub fn get_base_points<'a>(&self, group_points: &'a Vec<Point>) -> Vec<Point> {
-            let mut n: usize = group_points.len()+1;
-            let totient_n = basic_op::totient(&mut n);
+            let n: usize = group_points.len()+1;
             let mut generator_points = Vec::new();
         
             // we go through each point in the group
             for point in group_points {
+                let mut is_generator = true;
                 // we go through the divisors of n
-                for k in 1..=totient_n {
+                for k in 2..=n {
                     if n % k as usize == 0 {
                         // we multiply the point by the divisor k
                         let mut k_usize = k as usize;
                         let result = self.scalar_mul(*point, &mut k_usize);
         
                         // if the result is the point at infinity (0,0), the point is a generator
-                        if result.x == 0 && result.y == 0 {
-                            generator_points.push(*point);
+                        if k < n && result.x == 0 && result.y == 0 {
+                            is_generator = false;
                             break;
                         }
                     }
+                }
+
+                if is_generator {
+                    generator_points.push(*point);
                 }
             }
         

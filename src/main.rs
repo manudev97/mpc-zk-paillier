@@ -4,7 +4,7 @@ use mpc_zk_paillier::arithmetic::basic_op;
 fn main() {
 
     
-    let new_ec = EcWei::new(-2, 7, 17);
+    let new_ec = EcWei::new(-3, 4, 17);
     //println!("The {:?} belongs to the curve ?: {:?}", new_point, new_ec.is_point(&new_point));
 
     let group_add = new_ec.group_points();
@@ -20,9 +20,6 @@ fn main() {
         sum_point.to_string(),
      );
 
-    let mut n = 3454356239943;
-    let phi_n = basic_op::totient(&mut n);
-    println!("Totient of {} is {}", n, phi_n);
     let point_g= new_ec.get_base_points(&group_add);
     println!("Generator points {:?}", point_g);
 }
