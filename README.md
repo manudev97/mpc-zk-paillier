@@ -28,8 +28,6 @@ The two main properties of MPC are correctness and privacy:
 
 To improve the security of digital assets on the blockchain, MPC has been introduced in the multi-signature scenario. Multiple key fragments are used to compute the final signature using MPC protocols during the signing process. This signature can be verified using the corresponding unique public key. This technique, known as MPC multi-signature, provides a highly secure and efficient way to secure digital assets on the blockchain.
 
-# MPC and TSS
-
 We will use MPC to compute a digital signature in a distributed manner. Let us see how the above properties can be applied to signatures. Recall that, for signatures, we have three steps:
 
 - Key generation: The first step is also the most complex. We need to generate a key that will be public and used to verify future signatures. But we also need to generate an individual secret for each party, which we will call the shared secret. In terms of correctness and privacy, we say that the function will generate the same public key for all parties and a different shared secret for each of them, so that: (1) privacy: no data is leaked from the secrets shared between the parties, and (2) correctness: the public key is a function of the shared secrets.
@@ -48,3 +46,54 @@ Distributed key generation can be done in a way that allows for different types 
 
 - $\{t - n\}$ means that the threshold is $t$ and the number of participants is $n$. At least $t$ participants are required to recover the private key and sign a message.
 - $\{n - n\}$ means the threshold is $n$ and the number of participants is $n$.
+
+# MPC and TSS using Elliptic Curve Cryptography
+
+Elliptic Curve Cryptography (ECC) is a modern family of public-key cryptosystems. This type of cryptography is based on the algebraic structures of elliptic curves over finite fields ($\mathbb{F}_p$) where $p$ is a large prime number, for example 256 bits, and on the difficulty of the elliptic curve discrete logarithm problem (ECDLP). ECC implements all the main capabilities of asymmetric cryptosystems: encryption, signatures, and key exchange. For this demonstration for educational purposes only, we will work with the elliptic curve defined over the finite field for a prime $p = 17$ by the equation in Weierstrass form:
+$$E(\mathbb{F}_{17}): y^2 = x^3 - 2*x + 7 \; (mod \;17)$$
+
+```rust
+let new_ec: EcWei::new(-2, 7, 17);
+```
+
+In summary an elliptic curve over the finite field $\mathbb{F}_{p}$ consists of:
+- a set of integer coordinates $\{ x , y \}$, such that $0 \leq x , y < p$
+- staying on the elliptic curve: $y^2 \equiv x^3 + ax + b \;(\text{mod} \;p )$
+
+You can check if any point belongs to the defined curve:
+```rust
+println!("{:?}", new_ec.is_point(&Point::new(4,7))); // false
+println!("{:?}", new_ec.is_point(&Point::new(8,4))); // true
+```
+
+<div style="text-align: center;">
+    <img src="assets/E17Wei.png" alt="E17Wei" width="700" height="350"/>
+</div>
+
+This elliptic curve has properties that make it ideal for cryptographic operations. Being defined over a finite field, the set of solutions of the curve (the points) form a finite abelian group under the operation of adding points on the curve. The curve we are using has a group of order 11, that is, there are 11 points in total that form this group, including the point at infinity, which acts as the neutral element in the addition operation. I invite you to create new Weierstrass-type elliptic curves by passing the new integer values ​​for $a$, $b$ and $p$ in that order to the following method:
+```rust
+let new_ec: EcWei::new(a, b, p);
+```
+
+It is beautiful to observe the possibility of expressing a binary operation on a finite set using a table. In this set, which is formed by all the points that satisfy the Weierstrass curve equation, one of the properties that it satisfies is that we can add any two points and obtain a point that belongs to the same set. We implement the sum of two points in the following way:
+<div style="text-align: center;">
+    <img src="assets/point_add.png" alt="point_add" width="350" height="250"/>
+</div>
+
+```rust
+println!("{:?}", new_ec.point_add(&Point::new(8,4), &Point::new(8,4))); // (0,15)
+println!("{:?}", new_ec.point_add(&Point::new(8,4), &Point::new(6,7))); // (1,11)
+```
+As long as this set satisfies the properties of an algebraic group structure, we can construct a Cayley table. You can observe the Cayley table for the group formed by the elliptic curve created, using the following method:
+
+```rust
+let group_add = new_ec.group_points();
+new_ec.cayley_table(&group_add);
+```
+<div style="text-align: center;">
+    <img src="assets/cayleys_table.png" alt="cayleys_table" width="700" height="350"/>
+</div>
+
+## The "Generator" Point in ECC
+
+One of the most relevant properties of this curve is that it satisfies a special condition: all points in the group can act as generators of the group. We will note that this property is fundamental for the arithmetic operations that will be performed on the scalar field that defines this group, i.e. $F_{11}$. A generator is a point $G$ such that any other point on the curve can be obtained as a combination of the point $G$ added to itself, $G \cdot n$ (i.e., by scalar multiplication). We can select any point on the curve $E(17): y^2 = x^3 - 2*x + 7 \; (mod \;17)$ as the generator $G$ of the group. This is possible thanks to the property that the order of $G$ is the number of elements in the group. We refer to the order of $G$ as the number of times this point must be added to generate the point at infinity ($\infty$).
