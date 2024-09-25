@@ -21,6 +21,7 @@ pub mod ecc {
         }
     }
 
+    #[derive(Debug)]
     pub struct KeyPair {
         pub sk: usize,
         pub pk: Point,
@@ -106,22 +107,22 @@ pub mod ecc {
             let point_q = EcWei::scalar_mul(&self, *point, n);
             point_q
         }*/
-
+        
         // generate a key pair: private and public
-        pub fn gen_key_pair(&self, group_points: Vec<Point>) -> Result<KeyPair, String> {
-            let ord = group_points.len();
+        pub fn gen_key_pair(&self, generator: &Point) -> Result<KeyPair, String> {
+            let ord = 11; // o el orden específico de tu curva
             if ord <= 1 {
                 return Err("the value of n must be greater than 1.".to_string());
             }
-
-            // generate a random number between 1 and ord - 1
+        
+            // Generar un número aleatorio entre 1 y ord - 1
             let mut rng = rand::thread_rng();
             let private_key = rng.gen_range(1..ord);
-
-            // generate public key using scalar multiplication (private key: random integer)
-            let public_key = self.scalar_mul(*self.get_base_points(&group_points).get(0).unwrap(), &mut private_key.clone());
-
-            Ok(KeyPair{
+        
+            // Generar la clave pública usando multiplicación escalar
+            let public_key = self.scalar_mul(*generator, &mut private_key.clone());
+        
+            Ok(KeyPair {
                 sk: private_key,
                 pk: public_key,
             })

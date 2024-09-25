@@ -49,7 +49,8 @@ Distributed key generation can be done in a way that allows for different types 
 
 # MPC and TSS using Elliptic Curve Cryptography
 
-Elliptic Curve Cryptography (ECC) is a modern family of public-key cryptosystems. This type of cryptography is based on the algebraic structures of elliptic curves over finite fields ($\mathbb{F}_p$) where $p$ is a large prime number, for example 256 bits, and on the difficulty of the elliptic curve discrete logarithm problem (ECDLP). ECC implements all the main capabilities of asymmetric cryptosystems: encryption, signatures, and key exchange. For this demonstration for educational purposes only, we will work with the elliptic curve defined over the finite field for a prime $p = 17$ by the equation in Weierstrass form:
+Elliptic Curve Cryptography (ECC) is a modern family of public-key cryptosystems. This type of cryptography is based on the algebraic structures of elliptic curves over finite fields $(\mathbb{F}_p)$ where $p$ is a large prime number, for example 256 bits, and on the difficulty of the elliptic curve discrete logarithm problem (ECDLP). ECC implements all the main capabilities of asymmetric cryptosystems: encryption, signatures, and key exchange. For this demonstration for educational purposes only, we will work with the elliptic curve defined over the finite field for a prime $p = 17$ by the equation in Weierstrass form:
+
 $$E(\mathbb{F}_{17}): y^2 = x^3 - 2*x + 7 \; (mod \;17)$$
 
 ```rust
@@ -96,4 +97,32 @@ new_ec.cayley_table(&group_add);
 
 ## The "Generator" Point in ECC
 
-One of the most relevant properties of this curve is that it satisfies a special condition: all points in the group can act as generators of the group. We will note that this property is fundamental for the arithmetic operations that will be performed on the scalar field that defines this group, i.e. $F_{11}$. A generator is a point $G$ such that any other point on the curve can be obtained as a combination of the point $G$ added to itself, $G \cdot n$ (i.e., by scalar multiplication). We can select any point on the curve $E(17): y^2 = x^3 - 2*x + 7 \; (mod \;17)$ as the generator $G$ of the group. This is possible thanks to the property that the order of $G$ is the number of elements in the group. We refer to the order of $G$ as the number of times this point must be added to generate the point at infinity ($\infty$).
+One of the most relevant properties of this curve is that it satisfies a special condition: all points in the group can act as generators of the group. We will note that this property is fundamental for the arithmetic operations that will be performed on the scalar field that defines this group, i.e. $F_{11}$. A generator is a point $G$ such that any other point on the curve can be obtained as a combination of the point $G$ added to itself, $G \cdot n$ (i.e., by scalar multiplication). We can select any point on the curve $E(17): y^2 = x^3 - 2*x + 7 \; (mod \;17)$ as the generator $G$ of the group. This is possible thanks to the property that the order of $G$ is the number of elements in the group. We mean by order of $G$ the number of times this point must be summed to generate the point at infinity ($\infty$), which in this case is the identity element of the group. Note that if we instantiate another Weierstrass curve for example $E(17): y^2 = x^3 - 3*x + 4 \; (mod \;17)$ there are points that do not generate all the other elements of the group and these will not be taken as generating points for the group of the curve:
+```rust
+let other_ec = EcWei::new(-3, 4, 17);
+println!("{:?}", other_ec.scalar_mul(Point::new(6,10), &mut 2)); // (6,7)
+println!("{:?}", other_ec.scalar_mul(Point::new(6,10), &mut 3)); // (0,0) = ∞
+println!("{:?}", other_ec.scalar_mul(Point::new(6,10), &mut 4)); // (6,10)
+println!("{:?}", other_ec.scalar_mul(Point::new(6,10), &mut 5)); // (6,7)
+println!("{:?}", other_ec.scalar_mul(Point::new(6,10), &mut 6)); // (0,0)
+println!("{:?}", other_ec.scalar_mul(Point::new(6,10), &mut 7)); // (6,10) = ∞
+```
+We can say that the point (6,10) generates only three points in the group given by the curve $E(\mathbb{F}_{17}): y^2 = x^3 - 3*x + 4 \; (mod \;17)$, which is the same as (6,10) being of order 3.
+
+## ECDSA
+
+Private keys in ECC are integers (in the range of the curve field size, typically 256-bit integers). Key generation in ECC cryptography is as simple as securely generating a random integer in a given range, so it is extremely fast. Any number within the range is a valid ECC private key. Public keys in ECC are EC points - integer coordinate pairs (x, y), which lie on the curve. One of the most common uses of elliptic curves in cryptography is the Elliptic Curve Digital Signature Algorithm (ECDSA). In this algorithm, security is based on the difficulty of solving the discrete logarithm problem on the set of points on the curve. That is, given a generated public key, it is computationally difficult to find the private key. Let's generate some ECDSA key pairs from a generating point and we can generate public keys for private keys. For educational purposes we work on the curve $E(\mathbb{F}_{17}): y^2 = x^3 - 2*x + 7 \; (mod \;17)$. 
+
+## **1. Key generation**: ECDSA
+1. Select a generator point $G$ (belonging to $E(\mathbb{F}_{17})$) of order $n$. For this curve all points are of order $n = 11$, the number of elements in the set.
+2. Randomly select a number $d$ in the interval $[1, n - 1]$.
+3. Calculate $Q = dG$.
+4. $d$ will be the private key. Note that at point 2 if $d > n-1$, another private key $d_1 < d$ also generates $Q$ and this is not desired.
+5. $Q$ will be the public key.
+
+```rust
+let generators =  new_ec.get_base_points(&group_add);
+let point_g =  generators[0];
+let key_pair_1 = new_ec.gen_key_pair(&point_g);
+println!(" Generator {:?} -> {:?}",point_g, key_pair_1.unwrap());
+```
