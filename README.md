@@ -146,3 +146,12 @@ let part_1_dh = new_ec.scalar_mul(&key_pair_2.as_ref().unwrap().pk, &key_pair_1.
 let part_2_dh = new_ec.scalar_mul(&key_pair_1.as_ref().unwrap().pk, &key_pair_2.as_ref().unwrap().sk);
 println!("The Diffie-Hellman protocol is followed -> {:?}", &part_1_dh == &part_2_dh);
 ```
+4. Part 1 will also generate a Paillier key pair with a modulus $N$ and send an encrypted version of its secret $d_1$​, $c_{key} =Enc(d_1)$, with Paillier's public key to Part 2. For the Paillier protocol we set some values ​​for educational purposes, usually to achieve required security levels we work with large numbers for example 256 bits.
+    4.1 - **Paillier key generation**:
+        4.1.1. We select any 2 prime numbers ($p = 11$ and $q = 3$). We calculate $N = pq = 33$.
+        4.1.2. $λ = lcm(p - 1, q - 1) = 10$, where lcm is the least common multiple
+        4.1.3. We randomly select an integer $g$ that belongs to $\mathbb{Z}^*_{N^2} = \mathbb{Z}^*_{33^2} = \{1,2,3,...,1087,1088\}$
+        4.1.4. We ensure that $N$ divides $g$ by checking the following multiplicative inverse $μ$:
+            $μ = (L(g^λ \; mod \; N^2))^{-1} \; mod \; N$ where $L$ is the function $L(x) = \dfrac{x - 1}{N}$
+            $μ = (L(g^λ \; mod \; 1089))^{-1} \; mod \; 33$
+        4.1.5. Then private key: $(λ,μ)$ and public key: $(g,N)$.

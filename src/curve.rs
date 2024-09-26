@@ -86,8 +86,8 @@ pub mod ecc {
             }
         }
 
-        pub fn scalar_mul(&self, point: &Point, d: &usize) -> Point {
-            let mut n = *d;
+        pub fn scalar_mul(&self, point: &Point, d: usize) -> Point {
+            let mut n = d;
             let mut point_q = *point;
             let mut point_r = Point::new(0, 0);
             while n > 0 {
@@ -121,7 +121,7 @@ pub mod ecc {
             let private_key = rng.gen_range(2..ord);
         
             // Generar la clave pública usando multiplicación escalar
-            let public_key = self.scalar_mul(generator, &mut private_key.clone());
+            let public_key = self.scalar_mul(generator, private_key.clone());
         
             Ok(KeyPair {
                 sk: private_key,
@@ -141,8 +141,8 @@ pub mod ecc {
                 for k in 2..=n {
                     if n % k as usize == 0 {
                         // we multiply the point by the divisor k
-                        let mut k_usize = k as usize;
-                        let result = self.scalar_mul(point, &mut k_usize);
+                        let k_usize = k as usize;
+                        let result = self.scalar_mul(point, k_usize);
         
                         // if the result is the point at infinity (0,0), the point is a generator
                         if k < n && result.x == 0 && result.y == 0 {
