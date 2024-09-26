@@ -44,8 +44,12 @@ We can create a new address by generating a private key and then computing the p
 
 Distributed key generation can be done in a way that allows for different types of access structures: the general “$t$ of $n$” configuration will be able to withstand up to $t$ arbitrary failures in operations involving the private key, without compromising security.
 
-- $\{t - n\}$ means that the threshold is $t$ and the number of participants is $n$. At least $t$ participants are required to recover the private key and sign a message.
-- $\{n - n\}$ means the threshold is $n$ and the number of participants is $n$.
+- $\left\lbrace t - n \right\rbrace$ means that the threshold is $t$ and the number of participants is $n$. At least $t$ participants are required to recover the private key and sign a message.
+- $\left\lbrace n - n \right\rbrace$ means the threshold is $n$ and the number of participants is $n$.
+
+# Implementing an MPC Wallet
+
+- An MPC wallet uses multiparty computation technology to improve the security of your cryptocurrencies and other digital assets. It splits a wallet's private key between multiple parties to increase privacy and reduce the risks of hacks, breaches, and losses. Each party independently creates a private key as part of the MPC wallet's private key to sign messages. Different keys never encounter each other, no party has access to the full private key, thus eliminating single points of failure.. The interactive nature of the MPC wallet setup processes requires all parties to be present during the action.
 
 # MPC and TSS using Elliptic Curve Cryptography
 
@@ -113,8 +117,8 @@ We can say that the point (6,10) generates only three points in the group given 
 
 Private keys in ECC are integers (in the range of the curve field size, typically 256-bit integers). Key generation in ECC cryptography is as simple as securely generating a random integer in a given range, so it is extremely fast. Any number within the range is a valid ECC private key. Public keys in ECC are EC points - integer coordinate pairs (x, y), which lie on the curve. One of the most common uses of elliptic curves in cryptography is the Elliptic Curve Digital Signature Algorithm (ECDSA). In this algorithm, security is based on the difficulty of solving the discrete logarithm problem on the set of points on the curve. That is, given a generated public key, it is computationally difficult to find the private key. Let's generate some ECDSA key pairs from a generating point and we can generate public keys for private keys. For educational purposes we work on the curve $E(\mathbb{F}_{17}): y^2 = x^3 - 2*x + 7 \; (mod \;17)$. 
 
-## **1. Key generation**: ECDSA
-1. Select a generator point $G$ (belonging to $E(\mathbb{F}_{17})$) of order $n$. For this curve all points are of order $n = 11$, the number of elements in the set.
+### Key generation: ECDSA
+1. Select a generator point $G$ (belonging to $E(\mathbb{F}_{17})$ of order $n$. For this curve all points are of order $n = 11$, the number of elements in the set.
 2. Randomly select a number $d$ in the interval $[1, n - 1]$.
 3. Calculate $Q = dG$.
 4. $d$ will be the private key. Note that at point 2 if $d > n-1$, another private key $d_1 < d$ also generates $Q$ and this is not desired.
@@ -125,4 +129,20 @@ let generators =  new_ec.get_base_points(&group_add);
 let point_g =  generators[0];
 let key_pair_1 = new_ec.gen_key_pair(&point_g);
 println!(" Generator {:?} -> {:?}",point_g, key_pair_1.unwrap());
+```
+
+The main drawback of using a traditional setup to generate ECDSA keys in an MPC wallet to sign and verify ECDSA signatures, is that it creates a single point of failure. If each user possesses a full copy of the private key, any user could compromise the security of the protocol. By generating the private key in fragments and distributing these fragments among MPC participants, the risk of a single individual representing a point of vulnerability for the system is eliminated. Therefore, it is necessary to modify the protocol to avoid this single point of failure. Instead of each user having direct access to the full private key, a key fragment generation and distribution scheme must be implemented. In this way, control is decentralized, and the protocol becomes more secure.
+
+### TSS setup with ECDSA: For two parties
+1. Party 1 chooses a random number $d_1$ where $0 < d_1 < n$. Calculates $Q_1 = d_1G$.
+2. Part 2 chooses a random number $d_1$ where $0 < d_2 < n$. Calculate $Q_2 = d_2G$.
+```rust
+let key_pair_2 = new_ec.gen_key_pair(&point_g);
+println!(" Generator {:?} -> {:?}",point_g, key_pair_2.unwrap());
+```
+3. Each party will send $Q_1​$ or $Q_2$ ​to each other such that Party 2 will calculate $Q=Q_1d_2$ and Party 1 will calculate $Q=Q_2d_1$​. Both parties must arrive at the same point $Q$ where $Q = d_1d_2G$. This cryptographic method that allows two parties with no prior knowledge of each other to establish a shared secret over a public channel is known as the Diffie-Hellman key exchange.
+```rust
+let part_1_dh = new_ec.scalar_mul(&key_pair_2.as_ref().unwrap().pk, &key_pair_1.as_ref().unwrap().sk);
+let part_2_dh = new_ec.scalar_mul(&key_pair_1.as_ref().unwrap().pk, &key_pair_2.as_ref().unwrap().sk);
+println!("The Diffie-Hellman protocol is followed -> {:?}", &part_1_dh == &part_2_dh);
 ```

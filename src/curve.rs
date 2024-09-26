@@ -5,7 +5,7 @@ pub mod ecc {
     use rand::Rng;
 
     // definition of a Point structure to represent points on the curve
-    #[derive(Debug, Copy, Clone)]
+    #[derive(Debug, Copy, Clone, PartialEq)]
     pub struct Point {
         pub x: i64,
         pub y: i64,
@@ -21,7 +21,7 @@ pub mod ecc {
         }
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, Clone)]
     pub struct KeyPair {
         pub sk: usize,
         pub pk: Point,
@@ -86,16 +86,17 @@ pub mod ecc {
             }
         }
 
-        pub fn scalar_mul(&self, point: Point, n: &mut usize) -> Point {
-            let mut point_q = point;
+        pub fn scalar_mul(&self, point: &Point, d: &usize) -> Point {
+            let mut n = *d;
+            let mut point_q = *point;
             let mut point_r = Point::new(0, 0);
-            while *n > 0 {
-                if *n % 2 == 1 {
+            while n > 0 {
+                if n % 2 == 1 {
                     point_r = EcWei::point_add(&self, &point_r, &point_q);
                 }
                 point_q = EcWei::point_add(&self, &point_q, &point_q);
-                *n /= 2;
-                if *n == 0 {
+                n /= 2;
+                if n == 0 {
                     break;
                 }
             }
@@ -117,10 +118,10 @@ pub mod ecc {
         
             // Generar un número aleatorio entre 1 y ord - 1
             let mut rng = rand::thread_rng();
-            let private_key = rng.gen_range(1..ord);
+            let private_key = rng.gen_range(2..ord);
         
             // Generar la clave pública usando multiplicación escalar
-            let public_key = self.scalar_mul(*generator, &mut private_key.clone());
+            let public_key = self.scalar_mul(generator, &mut private_key.clone());
         
             Ok(KeyPair {
                 sk: private_key,
@@ -141,7 +142,7 @@ pub mod ecc {
                     if n % k as usize == 0 {
                         // we multiply the point by the divisor k
                         let mut k_usize = k as usize;
-                        let result = self.scalar_mul(*point, &mut k_usize);
+                        let result = self.scalar_mul(point, &mut k_usize);
         
                         // if the result is the point at infinity (0,0), the point is a generator
                         if k < n && result.x == 0 && result.y == 0 {
