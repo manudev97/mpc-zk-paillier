@@ -152,10 +152,10 @@ println!("The Diffie-Hellman protocol is followed -> {:?}", &part_1_dh == &part_
     - **Paillier key generation**:
         - We select any 2 prime numbers ($p = 11$ and $q = 3$). We calculate $N = pq = 33$.
         - $λ = lcm(p - 1, q - 1) = 10$, where lcm is the least common multiple
-        -. We randomly select an integer $g$ that belongs to $\mathbb{Z}^*_{N^2} = \mathbb{Z}^*_{33^2} = \{1,2,3,...,1087,1088\}$
+        - We randomly select an integer $g$ that belongs to $\mathbb{Z}^{*}_{N^2} = \mathbb{Z}^{*}_{33^2} = \{1,2,3,...,1087,1088\}$
         - We ensure that $N$ divides $g$ by checking the following multiplicative inverse $μ$:
-            $μ = (L(g^λ \; mod \; N^2))^{-1} \; mod \; N$ where $L$ is the function $L(x) = \dfrac{x - 1}{N}$
-            $μ = (L(g^λ \; mod \; 1089))^{-1} \; mod \; 33$
+            $μ = (L(g^λ \mod  N^2))^{-1} \mod  N$ where $L$ is the function $L(x) = \dfrac{x - 1}{N}$
+            $μ = (L(g^λ \mod 1089))^{-1} \mod 33$
         - Then private key: $(λ,μ)$ and public key: $(g,N)$.
         ```rust
         let paillier_key_p1 = gen_key_paillier(BigInt::from_i64(11).unwrap(), BigInt::from_i64(3).unwrap());
