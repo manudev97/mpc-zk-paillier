@@ -55,15 +55,15 @@ Distributed key generation can be done in a way that allows for different types 
 
 Elliptic Curve Cryptography (ECC) is a modern family of public-key cryptosystems. This type of cryptography is based on the algebraic structures of elliptic curves over finite fields $(\mathbb{F}_p)$ where $p$ is a large prime number, for example 256 bits, and on the difficulty of the elliptic curve discrete logarithm problem (ECDLP). ECC implements all the main capabilities of asymmetric cryptosystems: encryption, signatures, and key exchange. For this demonstration for educational purposes only, we will work with the elliptic curve defined over the finite field for a prime $p = 17$ by the equation in Weierstrass form:
 
-$$E(\mathbb{F}_{17}): y^2 = x^3 - 2*x + 7 \; (mod \;17)$$
+$$E(\mathbb{F}_{17}): y^2 = x^3 - 2x + 7 \mod (17)$$
 
 ```rust
 let new_ec: EcWei::new(-2, 7, 17);
 ```
 
 In summary an elliptic curve over the finite field $\mathbb{F}_{p}$ consists of:
-- a set of integer coordinates $\{ x , y \}$, such that $0 \leq x , y < p$
-- staying on the elliptic curve: $y^2 \equiv x^3 + ax + b \;(\text{mod} \;p )$
+- a set of integer coordinates $\left( x, y \right)$, such that $0 \leq x , y < p$
+- staying on the elliptic curve: $y^2 \equiv x^3 + ax + b \mod (p)$
 
 You can check if any point belongs to the defined curve:
 ```rust
@@ -81,7 +81,9 @@ let new_ec: EcWei::new(a, b, p);
 ```
 
 It is beautiful to observe the possibility of expressing a binary operation on a finite set using a table. In this set, which is formed by all the points that satisfy the Weierstrass curve equation, one of the properties that it satisfies is that we can add any two points and obtain a point that belongs to the same set. We implement the sum of two points in the following way:
+    
 <div style="text-align: center;">
+    <img src="assets/ec_add.webp" alt="ec_add" width="400" height="240"/>
     <img src="assets/point_add.png" alt="point_add" width="350" height="250"/>
 </div>
 
@@ -101,7 +103,7 @@ new_ec.cayley_table(&group_add);
 
 ## The "Generator" Point in ECC
 
-One of the most relevant properties of this curve is that it satisfies a special condition: all points in the group can act as generators of the group. We will note that this property is fundamental for the arithmetic operations that will be performed on the scalar field that defines this group, i.e. $F_{11}$. A generator is a point $G$ such that any other point on the curve can be obtained as a combination of the point $G$ added to itself, $G \cdot n$ (i.e., by scalar multiplication). We can select any point on the curve $E(17): y^2 = x^3 - 2*x + 7 \; (mod \;17)$ as the generator $G$ of the group. This is possible thanks to the property that the order of $G$ is the number of elements in the group. We mean by order of $G$ the number of times this point must be summed to generate the point at infinity ($\infty$), which in this case is the identity element of the group. Note that if we instantiate another Weierstrass curve for example $E(17): y^2 = x^3 - 3*x + 4 \; (mod \;17)$ there are points that do not generate all the other elements of the group and these will not be taken as generating points for the group of the curve:
+One of the most relevant properties of this curve is that it satisfies a special condition: all points in the group can act as generators of the group. We will note that this property is fundamental for the arithmetic operations that will be performed on the scalar field that defines this group, i.e. $\mathbb{F}_{11}$. A generator is a point $G$ such that any other point on the curve can be obtained as a combination of the point $G$ added to itself, $G \cdot n$ (i.e., by scalar multiplication). We can select any point on the curve $E(17): y^2 = x^3 - 2x + 7 \mod (17)$ as the generator $G$ of the group. This is possible thanks to the property that the order of $G$ is the number of elements in the group. We mean by order of $G$ the number of times this point must be summed to generate the point at infinity ($\infty$), which in this case is the identity element of the group. Note that if we instantiate another Weierstrass curve for example $E(17): y^2 = x^3 - 3x + 4 mod (17)$ there are points that do not generate all the other elements of the group and these will not be taken as generating points for the group of the curve:
 ```rust
 let other_ec = EcWei::new(-3, 4, 17);
 println!("{:?}", other_ec.scalar_mul(Point::new(6,10), &mut 2)); // (6,7)
@@ -111,11 +113,11 @@ println!("{:?}", other_ec.scalar_mul(Point::new(6,10), &mut 5)); // (6,7)
 println!("{:?}", other_ec.scalar_mul(Point::new(6,10), &mut 6)); // (0,0)
 println!("{:?}", other_ec.scalar_mul(Point::new(6,10), &mut 7)); // (6,10) = ∞
 ```
-We can say that the point (6,10) generates only three points in the group given by the curve $E(\mathbb{F}_{17}): y^2 = x^3 - 3*x + 4 \; (mod \;17)$, which is the same as (6,10) being of order 3.
+We can say that the point (6,10) generates only three points in the group given by the curve $E(\mathbb{F}_{17}): y^2 = x^3 - 3x + 4 \mod (17)$, which is the same as (6,10) being of order 3.
 
 ## ECDSA
 
-Private keys in ECC are integers (in the range of the curve field size, typically 256-bit integers). Key generation in ECC cryptography is as simple as securely generating a random integer in a given range, so it is extremely fast. Any number within the range is a valid ECC private key. Public keys in ECC are EC points - integer coordinate pairs (x, y), which lie on the curve. One of the most common uses of elliptic curves in cryptography is the Elliptic Curve Digital Signature Algorithm (ECDSA). In this algorithm, security is based on the difficulty of solving the discrete logarithm problem on the set of points on the curve. That is, given a generated public key, it is computationally difficult to find the private key. Let's generate some ECDSA key pairs from a generating point and we can generate public keys for private keys. For educational purposes we work on the curve $E(\mathbb{F}_{17}): y^2 = x^3 - 2*x + 7 \; (mod \;17)$. 
+Private keys in ECC are integers (in the range of the curve field size, typically 256-bit integers). Key generation in ECC cryptography is as simple as securely generating a random integer in a given range, so it is extremely fast. Any number within the range is a valid ECC private key. Public keys in ECC are EC points - integer coordinate pairs (x, y), which lie on the curve. One of the most common uses of elliptic curves in cryptography is the Elliptic Curve Digital Signature Algorithm (ECDSA). In this algorithm, security is based on the difficulty of solving the discrete logarithm problem on the set of points on the curve. That is, given a generated public key, it is computationally difficult to find the private key. Let's generate some ECDSA key pairs from a generating point and we can generate public keys for private keys. For educational purposes we work on the curve $E(\mathbb{F}_{17}): y^2 = x^3 - 2x + 7 \mod (17)$. 
 
 ### Key generation: ECDSA
 1. Select a generator point $G$ (belonging to $E(\mathbb{F}_{17})$ of order $n$. For this curve all points are of order $n = 11$, the number of elements in the set.
@@ -147,11 +149,15 @@ let part_2_dh = new_ec.scalar_mul(&key_pair_1.as_ref().unwrap().pk, &key_pair_2.
 println!("The Diffie-Hellman protocol is followed -> {:?}", &part_1_dh == &part_2_dh);
 ```
 4. Part 1 will also generate a Paillier key pair with a modulus $N$ and send an encrypted version of its secret $d_1$​, $c_{key} =Enc(d_1)$, with Paillier's public key to Part 2. For the Paillier protocol we set some values ​​for educational purposes, usually to achieve required security levels we work with large numbers for example 256 bits.
-    4.1 - **Paillier key generation**:
-        4.1.1. We select any 2 prime numbers ($p = 11$ and $q = 3$). We calculate $N = pq = 33$.
-        4.1.2. $λ = lcm(p - 1, q - 1) = 10$, where lcm is the least common multiple
-        4.1.3. We randomly select an integer $g$ that belongs to $\mathbb{Z}^*_{N^2} = \mathbb{Z}^*_{33^2} = \{1,2,3,...,1087,1088\}$
-        4.1.4. We ensure that $N$ divides $g$ by checking the following multiplicative inverse $μ$:
+    - **Paillier key generation**:
+        - We select any 2 prime numbers ($p = 11$ and $q = 3$). We calculate $N = pq = 33$.
+        - $λ = lcm(p - 1, q - 1) = 10$, where lcm is the least common multiple
+        -. We randomly select an integer $g$ that belongs to $\mathbb{Z}^*_{N^2} = \mathbb{Z}^*_{33^2} = \{1,2,3,...,1087,1088\}$
+        - We ensure that $N$ divides $g$ by checking the following multiplicative inverse $μ$:
             $μ = (L(g^λ \; mod \; N^2))^{-1} \; mod \; N$ where $L$ is the function $L(x) = \dfrac{x - 1}{N}$
             $μ = (L(g^λ \; mod \; 1089))^{-1} \; mod \; 33$
-        4.1.5. Then private key: $(λ,μ)$ and public key: $(g,N)$.
+        - Then private key: $(λ,μ)$ and public key: $(g,N)$.
+        ```rust
+        let paillier_key_p1 = gen_key_paillier(BigInt::from_i64(11).unwrap(), BigInt::from_i64(3).unwrap());
+        println!(" Part 1 -> {:?}", &paillier_key_p1);
+        ```
