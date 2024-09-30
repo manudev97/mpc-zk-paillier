@@ -11,9 +11,9 @@ pub struct PaillierKey {
     pub private_key: (BigInt, BigInt),
 }
 
-pub fn gen_key_paillier(p: BigInt, q: BigInt) -> PaillierKey {
+pub fn gen_key_paillier(p: &BigInt, q: &BigInt) -> PaillierKey {
     // calculate N
-    let n = &p * &q;
+    let n = p * q;
     // calculate λ (lambda = lcm(p - 1, q - 1))
     let lambda = basic_op::lcm(&p.sub(1), &q.sub(1));
 
@@ -38,11 +38,11 @@ pub fn gen_key_paillier(p: BigInt, q: BigInt) -> PaillierKey {
     }
 }
 
-pub fn cipher_paillier(public_key: (BigInt, BigInt), m: BigInt) -> Result<BigInt, &'static str> {
+pub fn cipher_paillier(public_key: &(BigInt, BigInt), m: &BigInt) -> Result<BigInt, &'static str> {
     let (g, n) = public_key;
 
     // ensure that the M message is appropriate
-    if m >= n || m <= BigInt::zero() {
+    if m >= n || *m <= BigInt::zero() {
         return Err("El mensaje o secreto no es apropiado");
     }
 
@@ -79,12 +79,12 @@ pub fn mod_exp(base: &BigInt, exp: &BigInt, modulus: &BigInt) -> BigInt {
     result
 }
 
-pub fn decipher_paillier(private_key: (BigInt, BigInt), c_key: BigInt, public_key: (BigInt, BigInt)) -> BigInt {
+pub fn decipher_paillier(private_key: &(BigInt, BigInt), c_key: BigInt, public_key: &(BigInt, BigInt)) -> BigInt {
     let (lambda, mu) = private_key;
     let (_g, n) = public_key;
 
     // function L = (x - 1) / N
-    let l = |x: BigInt| -> BigInt { (x - BigInt::one()) / &n };
+    let l = |x: BigInt| -> BigInt { (x - BigInt::one()) / n };
 
     // L(c^λ mod N^2)
     let l_value = l(mod_exp(&c_key, &lambda, &n.pow(2)));

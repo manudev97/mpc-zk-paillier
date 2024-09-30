@@ -130,7 +130,7 @@ Private keys in ECC are integers (in the range of the curve field size, typicall
 let generators =  new_ec.get_base_points(&group_add);
 let point_g =  generators[0];
 let key_pair_1 = new_ec.gen_key_pair(&point_g);
-println!(" Generator {:?} -> {:?}",point_g, key_pair_1.unwrap());
+println!(" Generator {:?} -> {:?} Part 1",point_g, key_pair_1.unwrap());
 ```
 
 The main drawback of using a traditional setup to generate ECDSA keys in an MPC wallet to sign and verify ECDSA signatures, is that it creates a single point of failure. If each user possesses a full copy of the private key, any user could compromise the security of the protocol. By generating the private key in fragments and distributing these fragments among MPC participants, the risk of a single individual representing a point of vulnerability for the system is eliminated. Therefore, it is necessary to modify the protocol to avoid this single point of failure. Instead of each user having direct access to the full private key, a key fragment generation and distribution scheme must be implemented. In this way, control is decentralized, and the protocol becomes more secure.
@@ -140,7 +140,7 @@ The main drawback of using a traditional setup to generate ECDSA keys in an MPC 
 2. Part 2 chooses a random number $d_1$ where $0 < d_2 < n$. Calculate $Q_2 = d_2G$.
 ```rust
 let key_pair_2 = new_ec.gen_key_pair(&point_g);
-println!(" Generator {:?} -> {:?}",point_g, key_pair_2.unwrap());
+println!(" Generator {:?} -> {:?} Part 2",point_g, key_pair_2.unwrap());
 ```
 3. Each party will send $Q_1​$ or $Q_2$ ​to each other such that Party 2 will calculate $Q=Q_1d_2$ and Party 1 will calculate $Q=Q_2d_1$​. Both parties must arrive at the same point $Q$ where $Q = d_1d_2G$. This cryptographic method that allows two parties with no prior knowledge of each other to establish a shared secret over a public channel is known as the Diffie-Hellman key exchange.
 ```rust
@@ -152,7 +152,7 @@ println!("The Diffie-Hellman protocol is followed -> {:?}", &part_1_dh == &part_
     - **Paillier key generation**:
         - We select any 2 prime numbers ($p = 11$ and $q = 3$). We calculate $N = pq = 33$.
         - $λ = lcm(p - 1, q - 1) = 10$, where lcm is the least common multiple
-        - We randomly select an integer $g$ that belongs to $\mathbb{Z}^{*}_{N^2} = \mathbb{Z}^{*}_{33^2} = \{1,2,3,...,1087,1088\}$
+        - We randomly select an integer $g$ that belongs to $`\mathbb{Z}^{*}_{N^2} = \mathbb{Z}^{*}_{33^2} = \{1,2,3,...,1087,1088\}`$
         - We ensure that $N$ divides $g$ by checking the following multiplicative inverse $μ$:
             $μ = (L(g^λ \mod  N^2))^{-1} \mod  N$ where $L$ is the function $L(x) = \dfrac{x - 1}{N}$
             $μ = (L(g^λ \mod 1089))^{-1} \mod 33$

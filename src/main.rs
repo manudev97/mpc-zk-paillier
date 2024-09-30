@@ -1,10 +1,10 @@
 use mpc_zk_paillier::curve::ecc::*;
 use mpc_zk_paillier::paillier::*;
-use num_bigint::BigInt; // Importamos BigInt
-use num_traits::FromPrimitive; // Importamos FromPrimitive para convertir enteros a BigInt
+use num_bigint::BigInt; 
+use num_traits::FromPrimitive;
 
 fn main() {
-    // Convertimos los enteros a BigInt
+    // Convert integers to BigInt
     let new_ec: EcWei = EcWei::new(
         BigInt::from_i64(-2).unwrap(),
         BigInt::from_i64(7).unwrap(),
@@ -12,10 +12,13 @@ fn main() {
     );
 
     //println!("The {:?} belongs to the curve ?: {:?}", new_point, new_ec.is_point(&new_point));
-    println!("{:?}", new_ec.is_point(&Point::new(
-        BigInt::from_i64(4).unwrap(),
-        BigInt::from_i64(7).unwrap()
-    )));
+    println!(
+        "{:?}",
+        new_ec.is_point(&Point::new(
+            BigInt::from_i64(4).unwrap(),
+            BigInt::from_i64(7).unwrap()
+        ))
+    );
 
     let group_add = new_ec.group_points();
     new_ec.cayley_table(&group_add);
@@ -25,7 +28,7 @@ fn main() {
             &Point::new(BigInt::from_i64(8).unwrap(), BigInt::from_i64(4).unwrap()),
             &Point::new(BigInt::from_i64(8).unwrap(), BigInt::from_i64(4).unwrap())
         )
-    ); // ()
+    );
     println!(
         "{:?}",
         new_ec.point_add(
@@ -58,56 +61,76 @@ fn main() {
     other_ec.cayley_table(&other_group_add);
     println!(
         "{:?}",
-        other_ec.scalar_mul(&Point::new(BigInt::from_i64(6).unwrap(), BigInt::from_i64(10).unwrap()), 2)
+        other_ec.scalar_mul(
+            &Point::new(BigInt::from_i64(6).unwrap(), BigInt::from_i64(10).unwrap()),
+            &BigInt::from(2)
+        )
     ); // (6,7)
     println!(
         "{:?}",
-        other_ec.scalar_mul(&Point::new(BigInt::from_i64(6).unwrap(), BigInt::from_i64(10).unwrap()), 3)
+        other_ec.scalar_mul(
+            &Point::new(BigInt::from_i64(6).unwrap(), BigInt::from_i64(10).unwrap()),
+            &BigInt::from(3)
+        )
     ); // (0,0) = ∞
     println!(
         "{:?}",
-        other_ec.scalar_mul(&Point::new(BigInt::from_i64(6).unwrap(), BigInt::from_i64(10).unwrap()), 4)
+        other_ec.scalar_mul(
+            &Point::new(BigInt::from_i64(6).unwrap(), BigInt::from_i64(10).unwrap()),
+            &BigInt::from(4)
+        )
     ); // (6,10)
     println!(
         "{:?}",
-        other_ec.scalar_mul(&Point::new(BigInt::from_i64(6).unwrap(), BigInt::from_i64(10).unwrap()), 5)
+        other_ec.scalar_mul(
+            &Point::new(BigInt::from_i64(6).unwrap(), BigInt::from_i64(10).unwrap()),
+            &BigInt::from(5)
+        )
     ); // (6,7)
     println!(
         "{:?}",
-        other_ec.scalar_mul(&Point::new(BigInt::from_i64(6).unwrap(), BigInt::from_i64(10).unwrap()), 6)
+        other_ec.scalar_mul(
+            &Point::new(BigInt::from_i64(6).unwrap(), BigInt::from_i64(10).unwrap()),
+            &BigInt::from(6)
+        )
     ); // (0,0)
     println!(
         "{:?}",
-        other_ec.scalar_mul(&Point::new(BigInt::from_i64(6).unwrap(), BigInt::from_i64(10).unwrap()), 7)
+        other_ec.scalar_mul(
+            &Point::new(BigInt::from_i64(6).unwrap(), BigInt::from_i64(10).unwrap()),
+            &BigInt::from(7)
+        )
     ); // (6,10) = ∞
 
     // TSS setup with ECDSA: For two parties
+    println!("\nTSS setup with ECDSA: For two parties:\n");
     let generators = new_ec.get_base_points(&group_add);
     let point_g = generators[0].clone();
     let key_pair_1 = new_ec.gen_key_pair(&point_g);
     println!(
-        " Generator {:?} -> {:?}",
+        " Generator {:?} -> {:?} Part 1",
         point_g,
         &key_pair_1.as_ref().unwrap()
     );
     let key_pair_2 = new_ec.gen_key_pair(&point_g);
     println!(
-        " Generator {:?} -> {:?}",
+        " Generator {:?} -> {:?} Part 2",
         point_g,
         &key_pair_2.as_ref().unwrap()
     );
 
     // Diffie-Hellman
+    println!("\nDiffie-Hellman:\n");
     println!(" Part 1 computa Q = Q_2 * d1:");
     let part_1_dh = new_ec.scalar_mul(
         &key_pair_2.as_ref().unwrap().pk,
-        key_pair_1.as_ref().unwrap().sk,
+        &key_pair_1.as_ref().unwrap().sk,
     );
     println!(" Part 1 gets Q as -> {:?}", &part_1_dh);
     println!(" Part 2 computa Q = Q_1 * d2:");
     let part_2_dh = new_ec.scalar_mul(
         &key_pair_1.as_ref().unwrap().pk,
-        key_pair_2.as_ref().unwrap().sk,
+        &key_pair_2.as_ref().unwrap().sk,
     );
     println!(" Part 1 gets Q as -> {:?}", &part_2_dh);
     println!(
@@ -116,6 +139,40 @@ fn main() {
     );
 
     // Paillier key generation
-    let paillier_key_p1 = gen_key_paillier(BigInt::from_i64(11).unwrap(), BigInt::from_i64(3).unwrap());
+    println!("\nPaillier key generation:\n");
+    let paillier_key_p1 =
+        gen_key_paillier(&BigInt::from_i64(11).unwrap(), &BigInt::from_i64(3).unwrap());
     println!(" Part 1 -> {:?}", &paillier_key_p1);
+
+    // Chiper secret with Paillier - Part 1
+    let chiper_p1 = cipher_paillier(
+        &paillier_key_p1.public_key,
+        &key_pair_1.as_ref().unwrap().sk,
+    );
+    println!(
+        " Encrypting the secret {:?} of Part 1 -> {:?}",
+        &key_pair_1.as_ref().unwrap().sk,
+        &chiper_p1.as_ref().unwrap()
+    );
+
+    // Chiper secret with Paillier - Part 2
+    let chiper_p2 = cipher_paillier(
+        &paillier_key_p1.public_key,
+        &key_pair_2.as_ref().unwrap().sk,
+    );
+    println!(
+        " Encrypting the secret {:?} of Part 2 -> {:?}",
+        &key_pair_2.as_ref().unwrap().sk,
+        &chiper_p2.as_ref().unwrap()
+    );
+
+    // Paillier Homomorphic
+    println!("\n ----+------ Check homomorphism ----+------\n");
+    println!("       Dec(Enc(m_1) * Enc(m_2)) = m_1 + m_2");
+    println!("       Dec(Enc({0:?}) * Enc({1:?})) = {0:?} + {1:?}", &key_pair_1.as_ref().unwrap().sk, &key_pair_2.as_ref().unwrap().sk);
+    println!("       Dec({0:?} * {1:?}) = {2:?} + {3:?}", &chiper_p1.as_ref().unwrap(), &chiper_p2.as_ref().unwrap(), &key_pair_1.as_ref().unwrap().sk, &key_pair_2.as_ref().unwrap().sk);
+    println!("       Dec({0:?}) = {1:?} + {2:?}", chiper_p1.as_ref().unwrap() * chiper_p2.as_ref().unwrap(), &key_pair_1.as_ref().unwrap().sk, &key_pair_2.as_ref().unwrap().sk);
+    println!("       Dec({0:?}) = {1:?} + {2:?}", chiper_p1.as_ref().unwrap() * chiper_p2.as_ref().unwrap() % &paillier_key_p1.public_key.0.clone().pow(2), &key_pair_1.as_ref().unwrap().sk, &key_pair_2.as_ref().unwrap().sk);
+    println!("Part 1 Dec:  {0:?} = {1:?} + {2:?}", decipher_paillier(&paillier_key_p1.private_key, chiper_p1.as_ref().unwrap() * chiper_p2.as_ref().unwrap() % &paillier_key_p1.public_key.0.clone().pow(2), &paillier_key_p1.public_key), &key_pair_1.as_ref().unwrap().sk, &key_pair_2.as_ref().unwrap().sk);
+    println!("{:?}, {:?}", &paillier_key_p1.public_key.0, &paillier_key_p1.public_key.0.clone().pow(2));
 }
