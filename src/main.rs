@@ -1,6 +1,8 @@
 use mpc_zk_paillier::curve::ecc::*;
 use mpc_zk_paillier::paillier::*;
+use sha2::{Digest, Sha256};
 use num_bigint::BigInt;
+use rand::Rng;
 use num_traits::FromPrimitive;
 
 fn main() {
@@ -22,20 +24,6 @@ fn main() {
 
     let group_add = new_ec.group_points();
     new_ec.cayley_table(&group_add);
-    println!(
-        "{:?}",
-        new_ec.point_add(
-            &Point::new(BigInt::from_i64(8).unwrap(), BigInt::from_i64(4).unwrap()),
-            &Point::new(BigInt::from_i64(8).unwrap(), BigInt::from_i64(4).unwrap())
-        )
-    );
-    println!(
-        "{:?}",
-        new_ec.point_add(
-            &Point::new(BigInt::from_i64(8).unwrap(), BigInt::from_i64(4).unwrap()),
-            &Point::new(BigInt::from_i64(6).unwrap(), BigInt::from_i64(7).unwrap())
-        )
-    );
 
     let point_a = group_add[5].clone();
     let point_b = group_add[2].clone();
@@ -59,47 +47,48 @@ fn main() {
         BigInt::from_i64(4).unwrap(),
         BigInt::from_i64(17).unwrap(),
     );
+
     let other_group_add = other_ec.group_points();
     other_ec.cayley_table(&other_group_add);
 
-    println!("\n The point G = (6,10) is not generator:\n");
+    println!("\n ----+------ The point G = (6,10) is not generator: ----+------\n");
     println!(
-        "G * 2 = {:?}",
+        " G * 2 = {:?}",
         other_ec.scalar_mul(
             &Point::new(BigInt::from_i64(6).unwrap(), BigInt::from_i64(10).unwrap()),
             &BigInt::from(2)
         )
     ); // (6,7)
     println!(
-        "G * 3 = {:?}",
+        " G * 3 = {:?}",
         other_ec.scalar_mul(
             &Point::new(BigInt::from_i64(6).unwrap(), BigInt::from_i64(10).unwrap()),
             &BigInt::from(3)
         )
     ); // (0,0) = ∞
     println!(
-        "G * 4 = {:?}",
+        " G * 4 = {:?}",
         other_ec.scalar_mul(
             &Point::new(BigInt::from_i64(6).unwrap(), BigInt::from_i64(10).unwrap()),
             &BigInt::from(4)
         )
     ); // (6,10)
     println!(
-        "G * 5 = {:?}",
+        " G * 5 = {:?}",
         other_ec.scalar_mul(
             &Point::new(BigInt::from_i64(6).unwrap(), BigInt::from_i64(10).unwrap()),
             &BigInt::from(5)
         )
     ); // (6,7)
     println!(
-        "G * 6 ={:?}",
+        " G * 6 ={:?}",
         other_ec.scalar_mul(
             &Point::new(BigInt::from_i64(6).unwrap(), BigInt::from_i64(10).unwrap()),
             &BigInt::from(6)
         )
     ); // (0,0)
     println!(
-        "G * 7 = {:?}",
+        " G * 7 = {:?}",
         other_ec.scalar_mul(
             &Point::new(BigInt::from_i64(6).unwrap(), BigInt::from_i64(10).unwrap()),
             &BigInt::from(7)
@@ -107,7 +96,7 @@ fn main() {
     ); // (6,10) = ∞
 
     // TSS setup with ECDSA: For two parties
-    println!("\nTSS setup with ECDSA: For two parties:\n");
+    println!("\n ----+------ TSS setup with ECDSA: For two parties: ----+------ \n");
     let generators = new_ec.get_base_points(&group_add);
     let point_g = generators[0].clone();
     let key_pair_1 = new_ec.gen_key_pair(&point_g);
@@ -124,7 +113,7 @@ fn main() {
     );
 
     // Diffie-Hellman
-    println!("\nDiffie-Hellman:\n");
+    println!("\n ----+------ Diffie-Hellman (DH): ----+------ \n");
     println!(" Part 1 computa Q = Q_2 * d1:");
     let part_1_dh = new_ec.scalar_mul(
         &key_pair_2.as_ref().unwrap().pk,
@@ -143,7 +132,7 @@ fn main() {
     );
 
     // Paillier key generation
-    println!("\nPaillier key generation:\n");
+    println!("\n ----+------ Paillier key generation: ----+------ \n");
     let paillier_key_p1 = gen_key_paillier(
         &BigInt::from_i64(11).unwrap(),
         &BigInt::from_i64(3).unwrap(),
@@ -221,4 +210,29 @@ fn main() {
         &key_pair_1.as_ref().unwrap().sk,
         &key_pair_2.as_ref().unwrap().sk
     );
+
+    // MPC Wallet 
+    println!("\n ----+------ MPC Wallet ----+------\n");
+    println!(" MPC wallet will sign the message M");
+    let message = "Hello Victor, this is a message from Peggy";
+    println!(" (M = {})", message);
+    println!("\n   + --- Part 1 generates a random secret k1, point R1 and a ZK proof --- +  \n");
+    let mut rng = rand::thread_rng();
+    let k1 = BigInt::from(rng.gen_range(1..group_add.len()-1));
+    println!("     k1 = {}", &k1);
+    let point_r1 = new_ec.scalar_mul(&points_g[0], &k1); 
+    println!("     R1 = {:?}", &point_r1);
+    println!("     => Post R1 and ZK proof that it correctly generated k1");
+    println!("\n   + --- Part 2 generates a random secret k2, point R2 and a ZK proof --- +  \n");
+    let k2 = BigInt::from(rng.gen_range(2..group_add.len()-1));
+    println!("     k2 = {}", &k2);
+    let point_r2 = new_ec.scalar_mul(&points_g[0], &k2);
+    println!("     R2 = {:?}", &point_r2);
+    println!("     => Post R2 and ZK proof that it correctly generated k2");
+    println!("\n   + --- Through DH they secretly share an R point --- + \n");
+    println!("     Shared secret Parte 1 (R = {:?})", new_ec.scalar_mul(&point_r2, &k1));
+    println!("     Shared secret Parte 2 (R = {:?})", new_ec.scalar_mul(&point_r1, &k2));
+    println!("\n   + --- Part 2 operates homomorphically --- + \n");
+    let hash_parte2 = hex::encode(Sha256::digest(message.as_bytes()));
+    println!("    (hash_parte2 = {:?})", &hash_parte2);
 }
