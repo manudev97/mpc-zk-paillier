@@ -1,6 +1,6 @@
 use mpc_zk_paillier::curve::ecc::*;
 use mpc_zk_paillier::paillier::*;
-use num_bigint::BigInt; 
+use num_bigint::BigInt;
 use num_traits::FromPrimitive;
 
 fn main() {
@@ -42,15 +42,17 @@ fn main() {
     let sum_point = new_ec.point_add(&point_a, &point_b);
 
     println!(
-        "\nThe sum of the point {} with the point {} is: {} ",
+        "\nThe sum of the point {} with the point {} is: {} \n",
         point_a.to_string(),
         point_b.to_string(),
         sum_point.to_string(),
     );
 
     // Generating point G and non-generating points
-    let point_g = new_ec.get_base_points(&group_add);
-    println!("Generator points {:?}", point_g);
+    let points_g = new_ec.get_base_points(&group_add);
+    for point in points_g.iter() {
+        println!("Generator {:?}", point);
+    }
 
     let other_ec = EcWei::new(
         BigInt::from_i64(-3).unwrap(),
@@ -59,43 +61,45 @@ fn main() {
     );
     let other_group_add = other_ec.group_points();
     other_ec.cayley_table(&other_group_add);
+
+    println!("\n The point G = (6,10) is not generator:\n");
     println!(
-        "{:?}",
+        "G * 2 = {:?}",
         other_ec.scalar_mul(
             &Point::new(BigInt::from_i64(6).unwrap(), BigInt::from_i64(10).unwrap()),
             &BigInt::from(2)
         )
     ); // (6,7)
     println!(
-        "{:?}",
+        "G * 3 = {:?}",
         other_ec.scalar_mul(
             &Point::new(BigInt::from_i64(6).unwrap(), BigInt::from_i64(10).unwrap()),
             &BigInt::from(3)
         )
     ); // (0,0) = ∞
     println!(
-        "{:?}",
+        "G * 4 = {:?}",
         other_ec.scalar_mul(
             &Point::new(BigInt::from_i64(6).unwrap(), BigInt::from_i64(10).unwrap()),
             &BigInt::from(4)
         )
     ); // (6,10)
     println!(
-        "{:?}",
+        "G * 5 = {:?}",
         other_ec.scalar_mul(
             &Point::new(BigInt::from_i64(6).unwrap(), BigInt::from_i64(10).unwrap()),
             &BigInt::from(5)
         )
     ); // (6,7)
     println!(
-        "{:?}",
+        "G * 6 ={:?}",
         other_ec.scalar_mul(
             &Point::new(BigInt::from_i64(6).unwrap(), BigInt::from_i64(10).unwrap()),
             &BigInt::from(6)
         )
     ); // (0,0)
     println!(
-        "{:?}",
+        "G * 7 = {:?}",
         other_ec.scalar_mul(
             &Point::new(BigInt::from_i64(6).unwrap(), BigInt::from_i64(10).unwrap()),
             &BigInt::from(7)
@@ -140,8 +144,10 @@ fn main() {
 
     // Paillier key generation
     println!("\nPaillier key generation:\n");
-    let paillier_key_p1 =
-        gen_key_paillier(&BigInt::from_i64(11).unwrap(), &BigInt::from_i64(3).unwrap());
+    let paillier_key_p1 = gen_key_paillier(
+        &BigInt::from_i64(11).unwrap(),
+        &BigInt::from_i64(3).unwrap(),
+    );
     println!(" Part 1 -> {:?}", &paillier_key_p1);
 
     // Chiper secret with Paillier - Part 1
@@ -149,10 +155,20 @@ fn main() {
         &paillier_key_p1.public_key,
         &key_pair_1.as_ref().unwrap().sk,
     );
+    let dechiper_p1 = decipher_paillier(
+        &paillier_key_p1.private_key,
+        chiper_p1.as_ref().unwrap().clone(),
+        &paillier_key_p1.public_key,
+    );
     println!(
-        " Encrypting the secret {:?} of Part 1 -> {:?}",
+        " Encrypting the secret ({:?}) of Part 1 -> {:?}",
         &key_pair_1.as_ref().unwrap().sk,
         &chiper_p1.as_ref().unwrap()
+    );
+    println!(
+        " Decrypting chipher ({:?}) -> {:?}",
+        &chiper_p1.as_ref().unwrap(),
+        &dechiper_p1
     );
 
     // Chiper secret with Paillier - Part 2
@@ -169,10 +185,40 @@ fn main() {
     // Paillier Homomorphic
     println!("\n ----+------ Check homomorphism ----+------\n");
     println!("       Dec(Enc(m_1) * Enc(m_2)) = m_1 + m_2");
-    println!("       Dec(Enc({0:?}) * Enc({1:?})) = {0:?} + {1:?}", &key_pair_1.as_ref().unwrap().sk, &key_pair_2.as_ref().unwrap().sk);
-    println!("       Dec({0:?} * {1:?}) = {2:?} + {3:?}", &chiper_p1.as_ref().unwrap(), &chiper_p2.as_ref().unwrap(), &key_pair_1.as_ref().unwrap().sk, &key_pair_2.as_ref().unwrap().sk);
-    println!("       Dec({0:?}) = {1:?} + {2:?}", chiper_p1.as_ref().unwrap() * chiper_p2.as_ref().unwrap(), &key_pair_1.as_ref().unwrap().sk, &key_pair_2.as_ref().unwrap().sk);
-    println!("       Dec({0:?}) = {1:?} + {2:?}", chiper_p1.as_ref().unwrap() * chiper_p2.as_ref().unwrap() % &paillier_key_p1.public_key.0.clone().pow(2), &key_pair_1.as_ref().unwrap().sk, &key_pair_2.as_ref().unwrap().sk);
-    println!("Part 1 Dec:  {0:?} = {1:?} + {2:?}", decipher_paillier(&paillier_key_p1.private_key, chiper_p1.as_ref().unwrap() * chiper_p2.as_ref().unwrap() % &paillier_key_p1.public_key.0.clone().pow(2), &paillier_key_p1.public_key), &key_pair_1.as_ref().unwrap().sk, &key_pair_2.as_ref().unwrap().sk);
-    println!("{:?}, {:?}", &paillier_key_p1.public_key.0, &paillier_key_p1.public_key.0.clone().pow(2));
+    println!(
+        "       Dec(Enc({0:?}) * Enc({1:?})) = {0:?} + {1:?}",
+        &key_pair_1.as_ref().unwrap().sk,
+        &key_pair_2.as_ref().unwrap().sk
+    );
+    println!(
+        "       Dec({0:?} * {1:?}) = {2:?} + {3:?}",
+        &chiper_p1.as_ref().unwrap(),
+        &chiper_p2.as_ref().unwrap(),
+        &key_pair_1.as_ref().unwrap().sk,
+        &key_pair_2.as_ref().unwrap().sk
+    );
+    println!(
+        "       Dec({0:?}) = {1:?} + {2:?}",
+        chiper_p1.as_ref().unwrap() * chiper_p2.as_ref().unwrap(),
+        &key_pair_1.as_ref().unwrap().sk,
+        &key_pair_2.as_ref().unwrap().sk
+    );
+    println!(
+        "       Dec({0:?}) = {1:?} + {2:?}",
+        (chiper_p1.as_ref().unwrap() * chiper_p2.as_ref().unwrap())
+            % &paillier_key_p1.public_key.1.clone().pow(2),
+        &key_pair_1.as_ref().unwrap().sk,
+        &key_pair_2.as_ref().unwrap().sk
+    );
+    println!(
+        "Part 1 Dec:  {0:?} = {1:?} + {2:?}",
+        decipher_paillier(
+            &paillier_key_p1.private_key,
+            (chiper_p1.as_ref().unwrap() * chiper_p2.as_ref().unwrap())
+                % &paillier_key_p1.public_key.1.clone().pow(2),
+            &paillier_key_p1.public_key
+        ),
+        &key_pair_1.as_ref().unwrap().sk,
+        &key_pair_2.as_ref().unwrap().sk
+    );
 }

@@ -207,24 +207,75 @@ $$ |  $$\ $$ |  $$ |   $$ |    $$ |      $$ |          $$ |        $$\   $$ |   
                 println!();
             }
 
-            let cell_width = std::cmp::max(max_x_len, max_y_len) + 4;
+            let cell_width = max_x_len + max_y_len + 5; // adjustment for cell space
 
+            // print the top line of the table
             print_table_border(num_points, cell_width);
 
-            print!("| {:^width$} ", "+", width = cell_width);
+            // print the second row (plus symbol, infinity and dots)
+            print!("|    +    |    ∞    ");
             for point in points {
-                print!("| {:^width$} ", point.to_string(), width = cell_width);
+                // format x and y coordinate with maximum size found
+                print!(
+                    "| ({:>width_x$},{:>width_y$}) ",
+                    point.x,
+                    point.y,
+                    width_x = max_x_len,
+                    width_y = max_y_len
+                );
             }
             println!("|");
 
             print_table_border(num_points, cell_width);
 
-            for point_row in points {
-                print!("| {:^width$} ", point_row.to_string(), width = cell_width);
+            // print the third row (plus symbol and dots)
+            print!("|    ∞    |    ∞    ");
+            for point in points {
+                // format x and y coordinate with maximum size found
+                print!(
+                    "| ({:>width_x$},{:>width_y$}) ",
+                    point.x,
+                    point.y,
+                    width_x = max_x_len,
+                    width_y = max_y_len
+                );
+            }
+            println!("|");
 
-                for point_col in points {
-                    let sum = self.point_add(&point_row, &point_col);
-                    print!("| {:^width$} ", sum.to_string(), width = cell_width);
+            print_table_border(num_points, cell_width);
+
+            // print the remaining rows of the table
+            for point in points {
+                // format x and y coordinate with maximum size found
+                for _ in 0..2 {
+                    print!(
+                        "| ({:>width_x$},{:>width_y$}) ",
+                        point.x,
+                        point.y,
+                        width_x = max_x_len,
+                        width_y = max_y_len
+                    );
+                }
+                for j in 0..num_points {
+                    let result = self.point_add(&point, &points[j]);
+
+                    // if the result is the point (0, 0), we print the infinity symbol
+                    if result.x == BigInt::zero() && result.y == BigInt::zero() {
+                        print!(
+                            "| {:^width$} ",
+                            "∞",
+                            width = max_x_len + max_y_len + 3 // total space to align with the rest
+                        );
+                    } else {
+                        // normally prints x and y coordinates
+                        print!(
+                            "| ({:>width_x$},{:>width_y$}) ",
+                            result.x,
+                            result.y,
+                            width_x = max_x_len,
+                            width_y = max_y_len
+                        );
+                    }
                 }
 
                 println!("|");

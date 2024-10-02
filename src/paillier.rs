@@ -23,8 +23,8 @@ pub fn gen_key_paillier(p: &BigInt, q: &BigInt) -> PaillierKey {
     let mut l = n.clone();
 
     // select g and calculate L until gcd(L, N) == 1
-    while basic_op::gcd(&l, &n) != BigInt::one() {
-        let random_value: u64 = rng.gen_range(1..(n.pow(2).to_u64().unwrap() as u64)); // generate a random u64
+    while basic_op::gcd(&g, &n) != BigInt::one() || basic_op::gcd(&l, &n) != BigInt::one() {
+        let random_value: u64 = rng.gen_range(1..(n.pow(2).to_u64().unwrap() as u64 - 1)); // generate a random u64
         g = BigInt::from(random_value); // convert to BigInt
         l = (g.modpow(&lambda, &n.pow(2)).sub(1)) / &n;
     }
@@ -50,45 +50,25 @@ pub fn cipher_paillier(public_key: &(BigInt, BigInt), m: &BigInt) -> Result<BigI
     let mut rng = rand::thread_rng();
     let mut r = n.clone();
     while basic_op::gcd(&r, &n) != BigInt::one() {
-        let random_value: u64 = rng.gen_range(1..n.to_u64().unwrap()); // generate a random u64
+        let random_value: u64 = rng.gen_range(1..(n.to_u64().unwrap())); // generate a random u64
         r = BigInt::from(random_value); // convert to BigInt
     }
 
     // calculating the encryption
-    let k1 = mod_exp(&g, &m, &n.pow(2));  // g^M mod N^2
-    let k2 = mod_exp(&r, &n, &n.pow(2));  // r^N mod N^2
+    let k1 = g.modpow(&m, &n.pow(2));  // g^M mod N^2
+    let k2 = r.modpow(&n, &n.pow(2));  // r^N mod N^2
     let c_key = (k1 * k2) % n.pow(2);     // (g^M * r^N) mod N^2
 
     Ok(c_key)
 }
 
-// modular exponentiation function for large numbers
-pub fn mod_exp(base: &BigInt, exp: &BigInt, modulus: &BigInt) -> BigInt {
-    let mut result = BigInt::one();
-    let mut base = base % modulus;
-    let mut exp = exp.clone();
-
-    while exp > BigInt::zero() {
-        if &exp % 2 == BigInt::one() {
-            result = (result * &base) % modulus;
-        }
-        exp >>= 1;
-        base = (&base * &base) % modulus;
-    }
-
-    result
-}
-
 pub fn decipher_paillier(private_key: &(BigInt, BigInt), c_key: BigInt, public_key: &(BigInt, BigInt)) -> BigInt {
     let (lambda, mu) = private_key;
     let (_g, n) = public_key;
-
     // function L = (x - 1) / N
     let l = |x: BigInt| -> BigInt { (x - BigInt::one()) / n };
-
     // L(c^λ mod N^2)
-    let l_value = l(mod_exp(&c_key, &lambda, &n.pow(2)));
-
+    let l_value = l(c_key.modpow(&lambda, &n.pow(2)));
     // M = L(c^λ mod N^2) * μ mod N
     let m = (l_value * mu) % n;
     
