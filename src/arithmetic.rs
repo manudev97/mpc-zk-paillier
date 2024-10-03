@@ -17,6 +17,7 @@ pub mod basic_op {
     }
 
     pub fn inv_mod(x: &BigInt, p: &BigInt) -> Option<BigInt> {
+        if x == &BigInt::zero() { return Some(BigInt::zero()) };
         // if x is negative, adjust it by adding p
         let mut x = x.clone();
         if x < BigInt::zero() {

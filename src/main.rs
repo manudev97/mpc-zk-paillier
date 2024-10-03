@@ -2,7 +2,6 @@ use mpc_zk_paillier::{curve::ecc::*, mpc_wallet};
 use num_bigint::BigInt;
 use num_traits::FromPrimitive;
 
-
 fn main() {
     // Convert integers to BigInt
     let new_ec: EcWei = EcWei::new(
@@ -94,5 +93,4 @@ fn main() {
     ); // (6,10) = ∞
 
     mpc_wallet::ecdsa_mpc(&new_ec, &group_add, &points_g);
-
 }
