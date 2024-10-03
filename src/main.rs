@@ -1,9 +1,10 @@
-use mpc_zk_paillier::curve::ecc::*;
+use mpc_zk_paillier::arithmetic::basic_op::inv_mod;
+use mpc_zk_paillier::{arithmetic::basic_op, curve::ecc::*};
 use mpc_zk_paillier::paillier::*;
 use sha2::{Digest, Sha256};
 use num_bigint::BigInt;
 use rand::Rng;
-use num_traits::FromPrimitive;
+use num_traits::{FromPrimitive, One, Zero};
 
 fn main() {
     // Convert integers to BigInt
@@ -130,6 +131,10 @@ fn main() {
         " The Diffie-Hellman protocol is followed -> {:?}",
         &part_1_dh == &part_2_dh
     );
+    let mut point_g = Point::new(BigInt::zero(),BigInt::zero());
+    if part_1_dh == part_2_dh {
+        point_g = part_1_dh;
+    }
 
     // Paillier key generation
     println!("\n ----+------ Paillier key generation: ----+------ \n");
@@ -166,7 +171,7 @@ fn main() {
         &key_pair_2.as_ref().unwrap().sk,
     );
     println!(
-        " Encrypting the secret {:?} of Part 2 -> {:?}",
+        " Encrypting the secret ({:?}) of Part 2 -> {:?}",
         &key_pair_2.as_ref().unwrap().sk,
         &chiper_p2.as_ref().unwrap()
     );
@@ -216,15 +221,18 @@ fn main() {
     println!(" MPC wallet will sign the message M");
     let message = "Hello Victor, this is a message from Peggy";
     println!(" (M = {})", message);
+
+    println!("\n ----+------ MPC Wallet Configuration ----+------");
     println!("\n   + --- Part 1 generates a random secret k1, point R1 and a ZK proof --- +  \n");
+    let ckey = chiper_p1;
     let mut rng = rand::thread_rng();
-    let k1 = BigInt::from(rng.gen_range(1..group_add.len()-1));
+    let k1 = BigInt::from(rng.gen_range(1..(group_add.len() + 1)));
     println!("     k1 = {}", &k1);
     let point_r1 = new_ec.scalar_mul(&points_g[0], &k1); 
     println!("     R1 = {:?}", &point_r1);
     println!("     => Post R1 and ZK proof that it correctly generated k1");
     println!("\n   + --- Part 2 generates a random secret k2, point R2 and a ZK proof --- +  \n");
-    let k2 = BigInt::from(rng.gen_range(2..group_add.len()-1));
+    let k2 = BigInt::from(rng.gen_range(2..(group_add.len() + 1)));
     println!("     k2 = {}", &k2);
     let point_r2 = new_ec.scalar_mul(&points_g[0], &k2);
     println!("     R2 = {:?}", &point_r2);
@@ -232,7 +240,49 @@ fn main() {
     println!("\n   + --- Through DH they secretly share an R point --- + \n");
     println!("     Shared secret Parte 1 (R = {:?})", new_ec.scalar_mul(&point_r2, &k1));
     println!("     Shared secret Parte 2 (R = {:?})", new_ec.scalar_mul(&point_r1, &k2));
+
+    println!("\n ----+------ MPC Signature ----+------");
     println!("\n   + --- Part 2 operates homomorphically --- + \n");
-    let hash_parte2 = hex::encode(Sha256::digest(message.as_bytes()));
-    println!("    (hash_parte2 = {:?})", &hash_parte2);
+    let mut hash_message_p2 = Sha256::new();
+    hash_message_p2.update(message.as_bytes());
+    let hash_result_p2 = hash_message_p2.finalize();
+    let hash_message_p2_to_ec = BigInt::from_bytes_be(num_bigint::Sign::Plus, &hash_result_p2) % BigInt::from(15);
+    println!("    [H(M) = {:?}]", &hash_message_p2_to_ec);
+    let mut rho = paillier_key_p1.public_key.1.clone();
+    while basic_op::gcd(&rho, &paillier_key_p1.public_key.1.clone()) != BigInt::from(1) {
+        rho = BigInt::from(rng.gen_range(0..(group_add.len() + 1).pow(2)));
+    }
+    let inv_k2 = inv_mod(&k2, &BigInt::from(group_add.len() + 1));
+    let c1 = cipher_paillier(
+        &paillier_key_p1.public_key,
+        &((&rho * &BigInt::from(group_add.len() + 1) + inv_k2.as_ref().unwrap() * &hash_message_p2_to_ec) % BigInt::from(group_add.len() + 1))
+    );
+    println!("    c1 = Enc(N + k2^-1 * H(M)) = {:?}", c1.as_ref().unwrap());
+    let v = (inv_k2.as_ref().unwrap() * &new_ec.scalar_mul(&point_r1, &k2).x * &key_pair_2.as_ref().unwrap().sk) % BigInt::from(group_add.len() + 1);
+    let c2 = ckey.as_ref().unwrap().modpow(&v, &paillier_key_p1.public_key.1.pow(2));
+    println!("    c2 = k2^-1 * r * d2 * cKey = {:?}", &c2);
+    let c3 = (c1.as_ref().unwrap() * &c2).modpow(&BigInt::one(), &paillier_key_p1.public_key.1.pow(2));
+    println!("    c3 = c1 + c2 = {:?}", &c3);
+    println!("    => Part 2 send (c3 = {:?}) to Part 1", &c3);
+
+    println!("\n   + --- Part 1 compute firma r y s --- + \n");
+    let mut s = decipher_paillier(&paillier_key_p1.private_key, c3, &paillier_key_p1.public_key);
+    let r = new_ec.scalar_mul(&point_r2, &k1).x % BigInt::from(group_add.len() + 1);
+    s = (s * inv_mod(&k1, &BigInt::from(group_add.len() + 1)).unwrap()) % BigInt::from(group_add.len() + 1);
+    println!("    => Part 1 post the signature like (r, s): ({:?}, {:?})", &r, &s);
+
+    println!("\n   + --- The MPC wallet verifies the signature ({:?}, {:?}) for the message --- + \n",&r, &s);
+    let mut hash_message_verifier = Sha256::new();
+    hash_message_verifier.update(message.as_bytes());
+    let hash_result_verifier = hash_message_verifier.finalize();
+    let hash_message_verifier_to_ec = BigInt::from_bytes_be(num_bigint::Sign::Plus, &hash_result_verifier) % BigInt::from(15);
+    println!("    [H({:?}) = {:?}]", &message, &hash_message_verifier_to_ec);
+    let u1 = (hash_message_verifier_to_ec * inv_mod(&s, &BigInt::from(group_add.len() + 1)).unwrap()) % BigInt::from(group_add.len() + 1);
+    let u2 = (&r * inv_mod(&s, &BigInt::from(group_add.len() + 1)).unwrap()) % BigInt::from(group_add.len() + 1);
+    let x = new_ec.point_add(&new_ec.scalar_mul(&points_g[0], &u1), &new_ec.scalar_mul(&point_g, &u2)).x;
+    if &r == &(x % BigInt::from(group_add.len() + 1)) {
+        println!("    The signature ({:?}, {:?}) is correct...", &r, &s )
+    } else {
+        println!("    The signature ({:?}, {:?}) is incorrect...", &r, &s )
+    }
 }
