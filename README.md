@@ -1,4 +1,4 @@
-# Introduction to MPC and TSS
+# Introduction to MPC and TSS  | For a better reading see PDF document (Spanish) [Consulta el documento aquí](Fundamentos%20de%20Wallet%20MPC.pdf)
 
 Secure multi-party computation (SMPC/MPC) allows multiple participants to collaboratively compute a pre-agreed function without the need for a trusted third party. This concept originated from Professor Andrew Yao's millionaire problem and its solution using cryptography in 1982. The scheme, which is an interaction between two people, could find out who was richer without revealing their actual wealth. It allows users to collaborate on calculations with each other without revealing any sensitive information. MPC has since evolved into an important branch of modern cryptography.
 
@@ -162,7 +162,7 @@ println!("The Diffie-Hellman protocol is followed -> {:?}", &part_1_dh == &part_
         println!(" Part 1 -> {:?}", &paillier_key_p1);
         ```
     - **Encrypting $d_1$ with Paillier** :
-        - We randomly select an integer $r$ that belongs to $Z^*_{N} = Z^*_{33}$ and whose greatest common divisor with $N$ is equal to 1. That is, $gcd(r,N) = 1$. Note that if $gcd(r,N) \neq 1$ the private key can be calculated correctly with little probability.
+        - We randomly select an integer $r$ that belongs to $\mathbb{Z}^*_{N} = \mathbb{Z}^*_{33}$ and whose greatest common divisor with $N$ is equal to 1. That is, $gcd(r,N) = 1$. Note that if $gcd(r,N) \neq 1$ the private key can be calculated correctly with little probability.
         - Encryption: $$c_{key} = Enc(d_1) = g^{d_1} * r^N \; mod \; N^2 = g^{d_1} * r^{33} \; mod \; 1089$$
         ```rust
 		let chiper_p1 = cipher_paillier(&paillier_key_p1.public_key, &key_pair_1.as_ref().unwrap().sk);
@@ -275,3 +275,8 @@ if &r == &(x % BigInt::from(group_add.len() + 1)) {
     println!("    The signature ({:?}, {:?}) is incorrect...", &r, &s)
 }
 ```
+
+# References
+
+- Yehuda Lindell. Fast secure two-party ecdsa signing. In Advances in Cryptology-CRYPTO 2017: 37th Annual International Cryptology Conference, Santa Barbara, CA, USA, August 20-24, 2017, Proceedings, Part II 37, pages 613-644. Springer, 2017.
+- Pascal Paillier. Public-key cryptosystems based on composite degree residuosity classes. In International conference on the theory and applications of cryptographic techniques, pages 223-238. Springer, 1999.

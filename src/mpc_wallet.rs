@@ -161,11 +161,14 @@ pub fn ecdsa_mpc(new_ec: &EcWei, group_add: &Vec<crate::curve::ecc::Point>, poin
     let mut hash_message_p2 = Sha256::new();
     hash_message_p2.update(message.as_bytes());
     let hash_result_p2 = hash_message_p2.finalize();
-    let hash_message_p2_to_ec =
-        BigInt::from_bytes_be(num_bigint::Sign::Plus, &hash_result_p2) % BigInt::from(2_u32.pow((&group_add.len() + 1) as u32));
+    let hash_message_p2_to_ec = BigInt::from_bytes_be(
+                        num_bigint::Sign::Plus, 
+                &hash_result_p2) %
+                BigInt::from(2_u32.pow((&group_add.len() + 1) as u32)
+    );
     println!("    [H(M) = {:?}]", &hash_message_p2_to_ec);
     let mut rho = paillier_key_p1.public_key.1.clone();
-    while gcd(&rho, &paillier_key_p1.public_key.1.clone()) != BigInt::from(1) {
+    while gcd(&rho, &paillier_key_p1.public_key.1) != BigInt::one() {
         rho = BigInt::from(rng.gen_range(0..(group_add.len() + 1).pow(2)));
     }
     let inv_k2 = inv_mod(&k2, &BigInt::from(group_add.len() + 1));
@@ -215,12 +218,13 @@ pub fn ecdsa_mpc(new_ec: &EcWei, group_add: &Vec<crate::curve::ecc::Point>, poin
     hash_message_verifier.update(message.as_bytes());
     let hash_result_verifier = hash_message_verifier.finalize();
     let hash_message_verifier_to_ec =
-        BigInt::from_bytes_be(num_bigint::Sign::Plus, &hash_result_verifier) % BigInt::from(2_u32.pow((&group_add.len() + 1) as u32));
+        BigInt::from_bytes_be(num_bigint::Sign::Plus, &hash_result_verifier)
+            % BigInt::from(2_u32.pow((&group_add.len() + 1) as u32));
     println!(
         "    [H({:?}) = {:?}]",
         &message, &hash_message_verifier_to_ec
     );
-    
+
     let u1 = (hash_message_verifier_to_ec
         * inv_mod(&s, &BigInt::from(group_add.len() + 1)).unwrap())
         % BigInt::from(group_add.len() + 1);

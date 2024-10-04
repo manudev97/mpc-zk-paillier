@@ -19,6 +19,21 @@ fn main() {
         ))
     );
 
+    println!(
+        "{:?}",
+        new_ec.point_add(
+            &Point::new(BigInt::from_i64(7).unwrap(), BigInt::from_i64(9).unwrap()),
+            &Point::new(BigInt::from_i64(7).unwrap(), BigInt::from_i64(9).unwrap())
+        )
+    ); // (16,12)
+    println!(
+        "{:?}",
+        new_ec.point_add(
+            &Point::new(BigInt::from_i64(7).unwrap(), BigInt::from_i64(9).unwrap()),
+            &Point::new(BigInt::from_i64(10).unwrap(), BigInt::from_i64(16).unwrap())
+        )
+    ); // (13,11)
+
     let group_add = new_ec.group_points();
     new_ec.cayley_table(&group_add);
 
@@ -35,9 +50,7 @@ fn main() {
 
     // Generating point G and non-generating points
     let points_g = new_ec.get_base_points(&group_add);
-    for point in points_g.iter() {
-        println!("Generator {:?}", point);
-    }
+    for point in points_g.iter() { println!("Generator {:?}", point) };
 
     let other_ec = EcWei::new(
         BigInt::from_i64(-3).unwrap(),
