@@ -25,7 +25,7 @@ pub fn gen_key_paillier(p: &BigInt, q: &BigInt) -> PaillierKey {
     // select g and calculate L until gcd(L, N) == 1
     while basic_op::gcd(&g, &n) != BigInt::one() || basic_op::gcd(&l, &n) != BigInt::one() {
         let random_value: u64 = rng.gen_range(1..(n.pow(2).to_u64().unwrap() as u64 - 1)); // generate a random u64
-        g = BigInt::from(random_value); // convert to BigInt
+        g = BigInt::from(5);//BigInt::from(random_value); // convert to BigInt
         l = (g.modpow(&lambda, &n.pow(2)).sub(1)) / &n;
     }
 
@@ -51,7 +51,7 @@ pub fn cipher_paillier(public_key: &(BigInt, BigInt), m: &BigInt) -> Result<BigI
     let mut r = n.clone();
     while basic_op::gcd(&r, &n) != BigInt::one() {
         let random_value: u64 = rng.gen_range(1..(n.to_u64().unwrap())); // generate a random u64
-        r = BigInt::from(random_value); // convert to BigInt
+        r = BigInt::from(7);;//BigInt::from(random_value); // convert to BigInt
     }
 
     // calculating the encryption
