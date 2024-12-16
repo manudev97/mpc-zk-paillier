@@ -310,8 +310,56 @@ Factorization is a difficult problem, if we try to check if there is any number 
 
 The idea is to factor a composite number, or better semiprime to this factorization algorithm. Most factorization algorithms are not able to prove that a number is prime, only they are able to find factors of a number that is not prime.
 
+**Pollard's Rho Algorithm (General Case)**:
+-  Given
+    - a finite set $S$
+    - a function $f: S\rightarrow S$
+    - a starting point $x_0 \in S$, with $\mid S \mid \;= r$
+- Let $x_{i+1} = f(x_i)$, we are looking for a collision, i.e. $x_i = x_j$
+- One way to find a collision is
+    - we store all $x_0, x_1, ... , x_j$
+    - $x_{j+1} = f(x_j)$ and compare $x_{j+1}$ with all $x_0$, $x_1$, ..., $x_j$
+- How to reduce memory: if we only checked if $x_j = x_{2i}$, we eventually found a collision
+- This algorithm would have complexity $O(\sqrt[]{r})$
 
 
+The above translates to the fact that we would like to generate numbers $x_1, ... ,x_i$ and check them pairwise, but we cannot do this more efficiently. The next best option is to generate random numbers one by one and check two consecutive numbers. We keep doing this for a while and hopefully we will get lucky.
+
+Pollard's Rho algorithm is a very interesting and fairly accessible algorithm for factoring numbers. It is not the fastest algorithm, but in practice it outperforms trial and error division by many orders of magnitude. It is based on very simple ideas that can be used in other contexts as well.
+
+**Problem**: Suppose $N = p \cdot q$ is a number to be factored and $p \neq q$. Our goal is to find one of the factors $p$ or $q$ (the other can be found by dividing by $N$).
+
+**Pollrd's Rho factorization algorithm**:
+- We assume that $p$ is a non-trivial factor of $N$
+- Let's choose an easy-to-evaluate function $f$, $f: \mathbb{Z}_N \rightarrow \mathbb{Z}_N$
+- For example $f(x) = x^2 +1 \mod N$
+- Let's choose an initial point $x_0 \in \mathbb{Z}_N$ (arbitrarily $x_0 = 2$)
+- We compute $x_{i+1} = f(x_i)$
+- We obtain a sequence: $2, f(2), f(f(2)), f(f(f(2)))...$, i.e. $x_i = f^i(x_0)$
+- Here a collision would mean $x_i = x_j \mod p$
+<div style="text-align: center;">
+    <img src="assets/rho.png" alt="rho" width="400" height="240"/>
+</div>
+
+- The above means that $p \mid x_i - x_j$, but also $p \mid N$
+- Then $p \mid \text{mcd}(x_i -x_j, N)$, currently $p = \text{mcd}(x_i -x_j, N)$
+- We calculate $(x_i, x_{2i})$ for each $i > 0$, we check that $\text{gcd}(x_{2i} - x_i, N) \neq 1,N$
+<div style="text-align: center;">
+    <img src="assets/rho_1.png" alt="rho_1" width="400" height="240"/>
+    <img src="assets/rho_2.png" alt="rho_2" width="500" height="340"/>
+</div>
+    
+- If $x_{2i} - x_i = 0 \Rightarrow \text{gcd}(0,N) = n > 1$ (this is unlikely)
+- If $p > 1$, such that $p = \text{gcd}(x_{2i} -x_i, N)$ (this happens quickly)
+
+Comparing this algorithm to a trivial brute-force division of order of complexity $O(\sqrt[]{N})$, we observe that since this algorithm does not look for a collision modulo $N$, but for a collision modulo $p$, the complexity translates to $O(\sqrt[]{p})$. If $N = pq$ where $p$ and $q$ are two primes of the same size ($p$ or $q$ approximately $\sqrt[]{N}$) then Pollard's Rho algorithm can find a non-trivial factor of $N$ in $O(\sqrt[4]{N})$ in the worst case}}. This is why it is necessary, for safety reasons, that $p$ and $q$ be chosen very close together. Note also that this algorithm may end in failure. In that case, change the function $f(x)$ or the starting point and try again.
+
+**Example**: Let's take $N = 55$ and $f(x) = x^2 + 1 \mod 55$
+<div style="text-align: center;">
+    <img src="assets/table_rho.png" alt="table_rho" width="400" height="240"/>
+</div>
+
+Here we consider our sequence $x_i$ such that $x_i \mod p$, meaning that our original cycle only has $p$ possibilities assuming we encounter a factor $p$, and therefore the maximum cycle length would be less than or equal to $p$.
 
 # References
 
