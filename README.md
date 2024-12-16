@@ -292,8 +292,30 @@ if &r == &(x % BigInt::from(group_add.len() + 1)) {
     println!("    The signature ({:?}, {:?}) is incorrect...", &r, &s)
 }
 ```
+# Security Assumptions in Paillier Encryption
+In the threshold version of the Paillier encryption scheme, a set of parties collectively hold the secret decryption key through a secret-sharing scheme. In our two-party example we use Diffie-Hellman. Whenever a ciphertext is to be decrypted, the parties send their decryption parts, which are then checked for correctness and combined into the plaintext. However, among the few existing proposals for a maliciously secure scheme, one must choose between an efficient implementation that relies on non-standard assumptions or a computationally expensive implementation that relies on widely acceptable assumptions.
+
+The quadratic residuity problem (QRP) in computational number theory is to decide, given integers $a$ and $N$, whether a is a quadratic residue modulo $N$ or not. Here $N = p_1p_2$, for two unknown primes $p_1$ and $p_2$. Various cryptographic methods depend on their hardness. An efficient algorithm for the quadratic residuity problem immediately implies efficient algorithms for other number theory problems, such as deciding whether a composite of unknown factorization is the product of 2 or 3 primes.
+
+More formally, given integers $a$ and $N$, a is said to be a quadratic residue modulo $N$ if there exists an integer $b$ such that, $$ a \equiv b \mod N$$
+
+**Problem**: Given integers a and $N = p_1p_2$, where $p_1$ and $p_2$ are distinct unknown primes, and where the Legrenge symbol $\displaystyle{a \choose N} = 1$, determine whether $a$ is a quadratic residue modulo $N$ or not. The problem of calculating square roots modulo $N$ is difficult if $N$ is composite and its prime factorization is unknown. The security of Paillier's system relies on the problem of factoring a number. Not addressable if $N$ has more than 200 digits.
+
+## Decisional Composite Residue Assumption
+The Decisional Composite Residue Assumption (DCRA) is a mathematical assumption used in cryptography. In particular, it is used in the proof of the Paillier cryptosystem. Informally, the DCRA states that, given a composite N and an integer z, it is difficult to decide
+whether $z$ is an $N$-residue modulo $N^2$. That is, whether there exists y such that: $$z ≡ y^N (\mod N^2).$$
+
+## Pollard's Rho algorithm for factoring $N$.
+Factorization is a difficult problem, if we try to check if there is any number less than $N$ that divides $N$, this search result translates into exponential complexity as $N$ grows. So we would ask ourselves: are there any better algorithms than exponential time? The answer is yes, currently there are no polynomial time algorithms to factor $N$. Instead we have subexponential time algorithms, in fact this is why the keys are required to be more than 256 bits. One of these is Pollard's Rho factorization algorithm. This is a general algorithm that you can use in many different scenarios, below we present the general case.
+
+The idea is to factor a composite number, or better semiprime to this factorization algorithm. Most factorization algorithms are not able to prove that a number is prime, only they are able to find factors of a number that is not prime.
+
+
+
 
 # References
 
 - Yehuda Lindell. Fast secure two-party ecdsa signing. In Advances in Cryptology-CRYPTO 2017: 37th Annual International Cryptology Conference, Santa Barbara, CA, USA, August 20-24, 2017, Proceedings, Part II 37, pages 613-644. Springer, 2017.
 - Pascal Paillier. Public-key cryptosystems based on composite degree residuosity classes. In International conference on the theory and applications of cryptographic techniques, pages 223-238. Springer, 1999.
+- Offir Friedman, Avichai Marmor, Dolev Mutzari, Yehonatan C Scaly, Yuval Spiizer, and Avishay Yanai. Tiresias: Large scale, maliciously secure threshold paillier. Cryptology ePrint Archive,
+2023.
