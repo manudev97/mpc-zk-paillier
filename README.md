@@ -1,5 +1,13 @@
 > For a better reading see PDF document (Spanish) [Here](Fundamentos%20de%20Wallet%20MPC.pdf)
 
+
+# Workflow 
+
+<div style="text-align: center;">
+    <img src="assets/1.png" alt="1" width="1000" height="550"/>
+</div>
+
+
 # Introduction to MPC and TSS  
 
 Secure multi-party computation (SMPC/MPC) allows multiple participants to collaboratively compute a pre-agreed function without the need for a trusted third party. This concept originated from Professor Andrew Yao's millionaire problem and its solution using cryptography in 1982. The scheme, which is an interaction between two people, could find out who was richer without revealing their actual wealth. It allows users to collaborate on calculations with each other without revealing any sensitive information. MPC has since evolved into an important branch of modern cryptography.
@@ -365,5 +373,4 @@ Here we consider our sequence $x_i$ such that $x_i \mod p$, meaning that our ori
 
 - Yehuda Lindell. Fast secure two-party ecdsa signing. In Advances in Cryptology-CRYPTO 2017: 37th Annual International Cryptology Conference, Santa Barbara, CA, USA, August 20-24, 2017, Proceedings, Part II 37, pages 613-644. Springer, 2017.
 - Pascal Paillier. Public-key cryptosystems based on composite degree residuosity classes. In International conference on the theory and applications of cryptographic techniques, pages 223-238. Springer, 1999.
-- Offir Friedman, Avichai Marmor, Dolev Mutzari, Yehonatan C Scaly, Yuval Spiizer, and Avishay Yanai. Tiresias: Large scale, maliciously secure threshold paillier. Cryptology ePrint Archive,
-2023.
+- Offir Friedman, Avichai Marmor, Dolev Mutzari, Yehonatan C Scaly, Yuval Spiizer, and Avishay Yanai. Tiresias: Large scale, maliciously secure threshold paillier. Cryptology ePrint Archive, 2023.
